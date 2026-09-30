@@ -99,14 +99,16 @@ def hallucination_rate(results: list[dict]) -> dict:
 def health_score(acc: float | None, vis: float | None, hall_rate: float | None) -> float | None:
     """This combines the parts into the AI Health Score:
     40% accuracy + 35% visibility + 25% not making things up.
-    If a part is missing, the other weights are scaled up to fill in.
+    Accuracy and visibility are both required: without them a business could score well just
+    because the AI said "I don't know". If only the trick-question part is missing, the other two
+    weights are scaled up to fill in. Otherwise there is no score (shown as "not enough data").
     """
+    if acc is None or vis is None:
+        return None
     parts = {'accuracy': acc, 'visibility': vis,
              'reliability': None if hall_rate is None else 100 - hall_rate}
     usable = {k: v for k, v in parts.items() if v is not None}
-    if not usable:
-        return None
-    weight = sum(HEALTH_WEIGHTS[k] for k in usable)  # renormalize if a part is missing
+    weight = sum(HEALTH_WEIGHTS[k] for k in usable)  # renormalize if reliability is missing
     return round(sum(HEALTH_WEIGHTS[k] * v for k, v in usable.items()) / weight, 1)
 
 

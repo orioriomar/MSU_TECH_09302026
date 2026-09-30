@@ -355,7 +355,7 @@ def process_answer(qid:str,answer:str,citations:list[str],mode:str,
                         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
                         (q['business_id'],cl['product_id'],product_name,cl['field'],cl['context'],
                          result['observed'],result['expected'],fact['fact_id'],fact['source_url'],title,
-                         suggested_action(cl['field']),severity_for(cl['product_id'],cl['field']),
+                         suggested_action(cl['field'],cl['product_id']),severity_for(cl['product_id'],cl['field']),
                          'pending',timestamp(),timestamp(),run_id,run_id,1,''))
                     tickets_created.append(cur.lastrowid)
             elif result['verdict']=='CORRECT' and mode!='demo':
@@ -433,27 +433,34 @@ def run_live_gemini(payload: LiveRequest):
     with conn() as c:
         q=get_question(c,payload.question_id)
     try:
-        answer,citations=ask_gemini_shopper(q['text'])
+        answer,citations=ask_gemini_shopper(q['text'])[:2]
     except Exception as exc:
         raise HTTPException(502,'Live Gemini call failed. Check key, model access, Google Search grounding, network and quota.') from exc
     return process_answer(payload.question_id,answer,citations,'live_gemini','ai')
 
-def ask_gemini_shopper(question_text:str)->tuple[str,list[str]]:
+def ask_gemini_shopper(question_text:str)->tuple[str,list[str],bool]:
     """This is the AI Mystery Shopper. It asks Gemini a question with Google Search turned on,
-    the way a real customer would, and returns the answer plus the web pages it cited.
+    the way a real customer would, and returns the answer, the web pages it cited, and whether
+    web search was actually used. If this API key has no Google Search quota left, it asks the same
+    question WITHOUT web search (the model answers from what it already knows) and says so, instead
+    of failing the whole check. Set GEMINI_SEARCH_FALLBACK=0 to turn that fallback off.
     """
     from google import genai
     from google.genai import types
-    client=genai.Client(api_key=os.environ['GEMINI_API_KEY'])
     from ai import with_quota_retry
-    response=with_quota_retry(lambda: client.models.generate_content(
-        model=os.getenv('GEMINI_SHOPPER_MODEL') or os.getenv('GEMINI_MODEL','gemini-3.5-flash-lite'),
-        contents=question_text,
-        config=types.GenerateContentConfig(
-            tools=[types.Tool(google_search=types.GoogleSearch())],
-            temperature=0.5,
-        ),
-    ))
+    client=genai.Client(api_key=os.environ['GEMINI_API_KEY'])
+    model=os.getenv('GEMINI_SHOPPER_MODEL') or os.getenv('GEMINI_MODEL','gemini-3.5-flash-lite')
+    try:
+        response=client.models.generate_content(model=model,contents=question_text,
+            config=types.GenerateContentConfig(tools=[types.Tool(google_search=types.GoogleSearch())],temperature=0.5))
+        grounded=True
+    except Exception as exc:
+        if not is_quota_error(exc) or os.getenv('GEMINI_SEARCH_FALLBACK','1')=='0':
+            raise
+        print('GEMINI SEARCH QUOTA: asking without web search')
+        response=with_quota_retry(lambda: client.models.generate_content(model=model,contents=question_text,
+            config=types.GenerateContentConfig(temperature=0.5)))
+        grounded=False
     answer=response.text or ''
     if not answer.strip():
         raise ValueError('Gemini returned an empty answer.')
@@ -464,7 +471,7 @@ def ask_gemini_shopper(question_text:str)->tuple[str,list[str]]:
             url=getattr(getattr(chunk,'web',None),'uri',None)
             if url and url.startswith('https://') and url not in citations:
                 citations.append(url)
-    return answer,citations
+    return answer,citations,grounded
 @app.post('/api/run-live')
 def run_live(payload:LiveRequest):
     """This asks ChatGPT (OpenAI) one question live, if an OpenAI key is set,
@@ -674,7 +681,8 @@ def run_one(q:dict, mode:str, mock:dict|None, brand:str)->dict:
             vis=item.get('visibility'); unsupported=item.get('unsupported',False); abstained=item.get('abstained',False)
             answer,cites=item['answer'],item.get('citations',[])
         else:
-            answer,cites=ask_gemini_shopper(q['text'])
+            res=ask_gemini_shopper(q['text'])
+            answer,cites=res[0],res[1]; r['web_search']=res[2] if len(res)>2 else True
             out=process_answer(q['id'],answer,cites,'live_gemini','ai' if q['type']!='visibility' else 'manual',[])
             vis=evals.parse_visibility(answer,brand,q['text']) if q['type']=='visibility' else None
             abstained=evals.detect_abstention(answer)
@@ -801,6 +809,8 @@ def api_eval_step(eid:int):
     # If Gemini's quota is used up, every remaining question would fail too: stop now instead of
     # making the owner wait, and keep the previous check as the latest real result.
     aborted='quota' if r.get('quota') else None
+    if not aborted and not mock and len(results)>=2 and all(x.get('error') for x in results):
+        aborted='error'   # e.g. a wrong API key or model name: every question would fail the same way
     done=len(results)>=len(plan) or bool(aborted)
     card=scoring.scorecard(results) if done else None
     with LOCK,conn() as c:

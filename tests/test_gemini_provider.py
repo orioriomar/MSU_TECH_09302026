@@ -54,3 +54,46 @@ def test_gemini_status_and_live_endpoint_without_key(monkeypatch,tmp_path):
     assert r.json()['gemini_configured'] is False
     r=client.post('/api/run-live-gemini',json={'question_id':'A001'})
     assert r.status_code==400
+
+
+def test_shopper_falls_back_to_no_search_when_search_quota_is_used_up(monkeypatch):
+    """A 429 on the Google Search tool must not sink the check: the same question is asked
+    without web search and the answer is labeled grounded=False."""
+    import app
+    calls = []
+
+    class Resp:
+        text = 'Try Casa Coqui Cafe.'
+        candidates = []
+
+    class Models:
+        def generate_content(self, **kw):
+            calls.append(bool(getattr(kw['config'], 'tools', None)))
+            if calls[-1]:
+                raise RuntimeError('429 RESOURCE_EXHAUSTED quota')
+            return Resp()
+
+    class Client:
+        def __init__(self, api_key): self.models = Models()
+
+    class Cfg:
+        def __init__(self, **kw): self.__dict__.update(kw)
+    fake_genai = types.ModuleType('google.genai'); fake_genai.Client = Client
+    fake_types = types.ModuleType('google.genai.types')
+    fake_types.GenerateContentConfig = Cfg
+    fake_types.Tool = lambda **kw: kw
+    fake_types.GoogleSearch = lambda: {}
+    fake_google = types.ModuleType('google'); fake_google.genai = fake_genai
+    monkeypatch.setitem(sys.modules, 'google', fake_google)
+    monkeypatch.setitem(sys.modules, 'google.genai', fake_genai)
+    monkeypatch.setitem(sys.modules, 'google.genai.types', fake_types)
+    monkeypatch.setenv('GEMINI_API_KEY', 'unit-test-key')
+    answer, cites, grounded = app.ask_gemini_shopper('best cafe?')
+    assert answer == 'Try Casa Coqui Cafe.' and cites == [] and grounded is False and calls == [True, False]
+    monkeypatch.setenv('GEMINI_SEARCH_FALLBACK', '0')
+    try:
+        app.ask_gemini_shopper('best cafe?')
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError('fallback should be off')

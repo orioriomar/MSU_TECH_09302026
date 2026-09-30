@@ -3,6 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 if [ "${1:-}" = "docker" ]; then
+  [ -f .env ] || { cp .env.example .env; echo "Created .env (add GEMINI_API_KEY for live mode; demo works without it)."; }
   echo "Building image..."
   docker build -t proof-flower:1.0 .
   echo "Starting proof-flower:1.0 on http://localhost:8000 ..."

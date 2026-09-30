@@ -205,15 +205,18 @@ def verify(claim: dict, facts: list[dict]) -> dict:
             'observed': str(claim['value']).strip() if readable else observed,
             'expected': str(fact['value']).strip() if readable else expected}
 
-def suggested_action(field: str) -> str:
+def suggested_action(field: str, product_id: str = '') -> str:
     """This returns the plain-language next step shown on a ticket, based on what kind of fact was wrong.
     It only suggests; nothing is changed until the owner approves.
     """
+    if field == 'availability' and product_id == 'business':
+        return ('Urgent: confirm your Google Business Profile and Yelp show you as open, and ask any old '
+                'directory that lists you as closed to correct or remove it.')
     return {
         'price_usd': 'Check the page the AI cited. If it shows an old price, update your menu page and '
                      'listings (Google, Yelp, delivery apps) so they match your current price.',
-        'availability': 'Make sure this item is listed as text on your own menu page, then ask outdated '
-                        'listings to update it. AI often says an item is missing when the menu is only a PDF or photo.',
+        'availability': 'State clearly on your own menu page (as text, not only a PDF or photo) whether this item '
+                        'is available, and when if it is seasonal. Then update any outdated listing the AI cited.',
         'address': 'Correct the address on every public listing so it matches your website exactly.',
         'hours': 'Make your hours identical on your website, Google Business Profile and Yelp.',
         'policy': 'Publish this policy in one clear sentence on your website (FAQ) and fix any listing that says otherwise.',

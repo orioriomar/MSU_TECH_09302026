@@ -63,7 +63,16 @@ a.btn{display:inline-block;text-decoration:none}
 .health h2{font:700 26px/1.2 var(--font);margin:0 0 8px}
 .health p{margin:0;color:#e9def6;font-size:17px}
 .health .delta{display:inline-block;margin-top:14px;font-weight:700;background:#fff;color:var(--p1);padding:6px 12px;border-radius:99px;font-size:14px}
-.three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.three{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.banner{margin:14px 0 0;padding:12px 16px;border-radius:12px;background:var(--warn-soft);color:#5a3b00;font-size:15px;display:none}
+.banner b{color:#3d2800}
+.fixrow{display:flex;flex-direction:column;gap:6px;margin-top:4px;font-size:15px}
+.fixrow span b{font-size:22px;color:var(--p1);margin-right:6px}
+.status.warnst{color:var(--warn);font-weight:700}
+.evidence{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.evidence q{font-style:italic;color:var(--ink)}
+.nextstep{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--paper);font-size:14px}
+.nextstep b{color:var(--p1)}
 .q{font:700 15px var(--font);color:var(--muted);margin:0 0 10px}
 .stat{font:700 34px/1.1 var(--font);margin:0;color:var(--p1)}
 .stat small{font:500 16px var(--font);color:var(--muted)}
@@ -169,10 +178,10 @@ footer a{color:var(--p2)}
   .app{grid-template-columns:minmax(0,1fr);gap:0}
   .side{min-width:0;position:sticky;top:64px;z-index:9;background:rgba(250,247,253,.96);padding:8px 0;margin:0 -20px;border-bottom:1px solid var(--line)}
   .side nav{flex-direction:row;overflow-x:auto;padding:0 20px} .side button{white-space:nowrap;padding:8px 12px} .side .sep{display:none}
-  .health{grid-template-columns:1fr;text-align:center} .three,.promise,.grid2{grid-template-columns:1fr}
+  .health{grid-template-columns:1fr;text-align:center} .promise,.grid2{grid-template-columns:1fr} .three{grid-template-columns:1fr 1fr}
   header .chip,.brand .word{display:none} select.biz{max-width:150px}
 }
-@media(max-width:600px){.compare{grid-template-columns:1fr}.qmeta{grid-template-columns:1fr;gap:2px}.qstat{min-width:0;flex:1;padding:10px 12px}}
+@media(max-width:600px){.three{grid-template-columns:1fr}.compare{grid-template-columns:1fr}.qmeta{grid-template-columns:1fr;gap:2px}.qstat{min-width:0;flex:1;padding:10px 12px}}
 </style>
 </head>
 <body>
@@ -198,7 +207,7 @@ footer a{color:var(--p2)}
 <main>
   <!-- OVERVIEW -->
   <div class="view" id="v-overview">
-    <div class="hello"><h1 id="hello"></h1><p id="sub"></p></div>
+    <div class="hello"><h1 id="hello"></h1><p id="sub"></p><div class="banner" id="demoBanner"></div></div>
     <div class="health">
       <div class="gauge">
         <svg width="210" height="210" viewBox="0 0 220 220"><circle cx="110" cy="110" r="94" fill="none" stroke="rgba(230,215,248,.18)" stroke-width="16"/>
@@ -211,6 +220,7 @@ footer a{color:var(--p2)}
       <div class="card"><p class="q" data-t="q1"></p><p class="stat" id="s1">–</p><p class="was" id="w1"></p><div class="meter"><i id="m1"></i></div></div>
       <div class="card"><p class="q" data-t="q2"></p><p class="stat" id="s2">–</p><p class="was" id="w2"></p><div class="meter"><i id="m2"></i></div></div>
       <div class="card"><p class="q" data-t="q3"></p><p class="stat" id="s3">–</p><p class="was" id="w3"></p><div class="meter"><i id="m3" style="background:var(--bad)"></i></div></div>
+      <div class="card"><p class="q" data-t="q4"></p><div class="fixrow" id="s4"></div></div>
     </div>
     <section><div class="card run" id="runPanel"></div></section>
     <section>
@@ -291,7 +301,7 @@ footer a{color:var(--p2)}
 
 // Page state: chosen business, language, first check (A) and latest check (B), tickets, plan, questions, facts, tabs.
 let BIZ='casa_coqui', BIZLIST=[], LANG='en', A=null, B=null, REPORT=null, RECS=[], QS=[], FACTS=[], RUNS=[],
-    TAB='todo', QTAB='all', SHOWALL=false, CSVTEXT='', RUNNING=false;
+    TAB=null, QTAB='all', SHOWALL=false, CSVTEXT='', RUNNING=false;
 try{ BIZ=localStorage.getItem('pf_biz')||BIZ; }catch(e){}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -303,9 +313,16 @@ en:{navOverview:'Overview',navIssues:'Issues',navPlan:'Growth plan',navQuestions
  hello:n=>`Hi, ${n}`,sub:(loc,a,b)=>[loc,b&&`Latest check: ${b}`,a&&`compared with ${a}`].filter(Boolean).join(' · '),
  healthTitle:'Your AI health score',grades:['Seedling · needs care','Growing','Blooming'],
  summary:(m,n,m0,p,ip)=>`AI assistants mention you in ${m} of ${n} local searches${m0!=null?` (it was ${m0})`:''}. ${p?`${p} issue${p>1?'s need':' needs'} your OK`:'Nothing needs your OK right now'}${ip?`, and ${ip} fix${ip>1?'es are':' is'} being re-checked.`:'.'}`,
- noChecks:'No checks yet. Run your first check below to get your score.',
+ noChecks:'No checks yet. Run your first check below to get your score.', noScore:'Not enough data for a score yet: AI gave no fact we could check against your approved facts.',
  delta:d=>d>=0?`▲ ${d} points since your first check`:`▼ ${Math.abs(d)} points since your first check`,first:'This is your first check',
- q1:'Do customers find you?',q2:'Does AI get your facts right?',q3:'Does AI make things up about you?',
+ q1:'Do customers find you?',q2:'Does AI get your facts right?',q3:'Does AI make things up about you?',q4:'Did your fixes work?',
+ demoBanner:'<b>Sample data.</b> Casa Coquí Café is a fictional showcase business. Its facts and every AI answer shown here were written by our team to show the workflow; the checking, tickets and scores are computed by the real code. Add your own business to run live checks with Gemini.',
+ fix:(v,s,w)=>`<span><b>${v}</b>confirmed fixed by a re-check</span><span><b>${s}</b>approved, but AI still gets it wrong</span><span><b>${w}</b>waiting for your OK</span>`,
+ stillWrong:'Fix approved · AI still said this on the latest check, so it stays open',
+ noSearch:'answered without web search (search quota used up)',evQuote:'The AI’s exact words',evFull:'See the full AI answer',factSrc:'Your approved source',checkedOn:'checked',nextStep:'Suggested next step',
+ aborted:'Gemini’s quota ran out, so the check stopped early. Nothing was scored and your previous results are unchanged. Try again in a few minutes, or use a paid API key.',
+ fStill:(id,h)=>`↻ Fix approved, but AI still says this: ${h} → Ticket #${id} stays open`,
+ abortedErr:'The live AI service is not responding (check the API key and model name). The check stopped early; nothing was scored and your previous results are unchanged.',
  s1:(m,n)=>`${m} <small>of ${n} searches</small>`,s2:(c,t)=>`${c} <small>of ${t} facts right</small>`,s3:(h,n)=>`${h} <small>of ${n} trick questions</small>`,
  was:v=>`Was ${v} at your first check`,
  runTitle:'Run a check',runLeadDemo:'Watch the check run question by question. Every wrong answer is flagged and turned into a ticket on the spot.',
@@ -316,12 +333,12 @@ en:{navOverview:'Overview',navIssues:'Issues',navPlan:'Growth plan',navQuestions
  fCreated:(id,sev,h)=>`⚑ Flagged: ${h} → Ticket #${id} created (${sev})`,fRepeat:(id,h)=>`↻ Same problem again: ${h} → added to Ticket #${id}`,fFixed:(id,h)=>`✓ Fixed: ${h} → Ticket #${id} confirmed`,
  done:(n,c,f)=>`Check complete. ${c} new issue${c===1?'':'s'} flagged and turned into ticket${c===1?'':'s'}${f?`, ${f} fix${f===1?'':'es'} confirmed`:''}. Scores updated.`,
  review:'Review issues',couldnt:'Could not check',
- ovTitle:'Needs your OK',ovLead:'The most important things to review.',ovAll:'See all issues',ovPlan:'See your growth plan',
+ ovTitle:'Needs your attention',ovLead:'What AI is getting wrong about you right now, most serious first.',ovAll:'See all issues',ovPlan:'See your growth plan',
  attnTitle:'Issues',attnLead:'Every time an AI assistant tells customers something that contradicts your approved facts, we open a ticket. Most serious first. Nothing changes until you approve.',
  tabs:{todo:'Needs your OK',progress:'Being re-checked',done:'Closed'},
  says:'What AI tells customers',saidBefore:'What AI used to say',truth:'The truth',caught:'Caught by',source:'Likely source',noSource:'not shown by the AI',
  approve:'Approve fix',reject:'Not an issue',look:'Look into it',
- status:{pending:'Waiting for your OK',approved:"Fix approved · waiting for the next check to confirm",verified:'Fixed · AI now gets this right',rejected:'Dismissed',investigating:"We're looking into it"},
+ status:{pending:'Waiting for your OK',approved:"Fix approved · waiting for the next check to confirm it worked",verified:'Fixed · AI now gets this right',rejected:'Dismissed',investigating:"We're looking into it"},
  sev:{critical:'Critical',high:'High',medium:'Medium',low:'Low'},emptyTab:'Nothing here right now.',
  planTitle:'Your growth plan',planLead:'Simple steps to show up more often in AI answers, in the order we recommend. We can write most of it for you.',
  when:{high:'Do this first',medium:'Next',low:'When you have time'},why:'Why',what:'What to do',time:'Time',help:'How it helps',
@@ -342,7 +359,7 @@ en:{navOverview:'Overview',navIssues:'Issues',navPlan:'Growth plan',navQuestions
  p3h:'We never',p3:['Write fake or paid reviews','Use tricks or hidden text to fool AI','Say anything bad about competitors','Call a fix successful until a new check proves it'],
  accountable:'You own your business facts and approve every public change. proof flower owns the checks: a person reviews flagged issues and spot-checks our own results every week, and every decision is logged.',
  howTitle:'How your score works',
- formula:`<p><b>AI health score</b> = 40% facts right + 35% showing up + 25% not making things up.</p><p><b>Showing up</b> gives more credit for being recommended first than for being listed lower.</p><p><b>Facts right</b> weighs mistakes by how much they hurt you: a wrong price, policy or hours counts more than a small detail. If we can’t verify something, it never counts against you.</p><p><b>Making things up</b> uses trick questions. Saying “I’m not sure” is the safe answer.</p><p>Behind the scenes: AI turns answers into facts, and plain code (not AI) decides what’s right by comparing with the facts you approved.</p>`,
+ formula:`<p><b>AI health score</b> = 40% facts right + 35% showing up + 25% not making things up. It is our own summary number for tracking one business over time, not an industry standard, so we always show the three parts next to it.</p><p><b>Showing up</b> gives more credit for being recommended first than for being listed lower.</p><p><b>Facts right</b> weighs mistakes by how much they hurt you: a wrong price, policy or hours counts more than a small detail. If we can’t verify something, it never counts against you.</p><p><b>Making things up</b> uses trick questions. Saying “I’m not sure” is the safe answer.</p><p>Behind the scenes: AI turns answers into facts, and plain code (not AI) decides what’s right by comparing with the facts you approved.</p><p>A fix only counts as working when the same question, asked again later, gets the right answer. That shows the AI changed, not that our fix caused it.</p>`,
  testBtn:'Test our own checker (demo answers)',testing:'Testing our checker on answers we labeled by hand…',
  testResult:(p,r,e,n)=>`Our checker found ${r}% of the facts it should have, and ${p}% of what it found was right (${e}% of answers matched perfectly), across ${n} hand-labeled answers.`,
  setupTitle:'Add a business',setupLead:'Upload a spreadsheet of a business’s facts. We build its question list and you can run a live check with Gemini right away.',
@@ -355,7 +372,7 @@ en:{navOverview:'Overview',navIssues:'Issues',navPlan:'Growth plan',navQuestions
  yourBiz:'Your businesses',remove:'Remove',demoTag:'demo',removed:'Removed.',
  footer:'proof flower · Montclair State University · HSI Battle of the Brains 2026 · Demo data is always labeled.',analyst:'Technical view',
  logged:'Saved. Your decision is logged.',
- hl:{closed:'AI says you’re permanently closed',price:(p,c)=>`Wrong price for ${p}${c?` (${c})`:''}`,hours:'Wrong opening hours',address:'Wrong address',delivery:'Wrong delivery information',reservations:'Wrong reservation information','catering minimum':'Wrong catering minimum',policy:'Wrong policy information',avail:p=>`Wrong availability for ${p}`,invented:'AI made something up about you'},
+ hl:{closed:'AI says you’re permanently closed',price:(p,c)=>`Wrong price for ${p}${c?` (${c})`:''}`,hours:'Wrong opening hours',address:'Wrong address',delivery:'Wrong delivery information',reservations:'Wrong reservation information','catering minimum':'Wrong catering minimum',policy:'Wrong policy information',avail:p=>`Wrong availability for ${p}`,invented:'AI may have made something up about you'},
  val:{available:'Available now',notInFacts:'Not in your approved facts',unavailable:'Not available right now',closed:'Permanently closed',open:'Open for business'},
  ctx:{lunch:'lunch',dinner:'dinner',each:'each'}},
 es:{navOverview:'Resumen',navIssues:'Problemas',navPlan:'Plan de crecimiento',navQuestions:'Preguntas',navPromise:'Nuestra promesa',navSetup:'+ Agregar un negocio',nameLbl:'Nombre del negocio (solo si tu archivo es una lista de productos)',
@@ -363,9 +380,17 @@ es:{navOverview:'Resumen',navIssues:'Problemas',navPlan:'Plan de crecimiento',na
  hello:n=>`Hola, ${n}`,sub:(loc,a,b)=>[loc,b&&`Última revisión: ${b}`,a&&`comparada con ${a}`].filter(Boolean).join(' · '),
  healthTitle:'Tu puntuación de salud en IA',grades:['Semilla · necesita cuidado','Creciendo','Floreciendo'],
  summary:(m,n,m0,p,ip)=>`Los asistentes de IA te mencionan en ${m} de ${n} búsquedas locales${m0!=null?` (antes: ${m0})`:''}. ${p?`${p} ${p>1?'problemas necesitan':'problema necesita'} tu aprobación`:'Nada necesita tu aprobación ahora'}${ip?`, y ${ip} ${ip>1?'arreglos se están':'arreglo se está'} volviendo a revisar.`:'.'}`,
- noChecks:'Todavía no hay revisiones. Haz tu primera revisión abajo para obtener tu puntuación.',
+ noChecks:'Todavía no hay revisiones. Haz tu primera revisión abajo para obtener tu puntuación.', noScore:'Aún no hay datos suficientes para una puntuación: la IA no dio ningún dato que pudiéramos comparar con tus datos aprobados.',
  delta:d=>d>=0?`▲ ${d} puntos desde tu primera revisión`:`▼ ${Math.abs(d)} puntos desde tu primera revisión`,first:'Esta es tu primera revisión',
- q1:'¿Te encuentran los clientes?',q2:'¿La IA tiene tus datos correctos?',q3:'¿La IA inventa cosas sobre ti?',
+ q1:'¿Te encuentran los clientes?',q2:'¿La IA tiene tus datos correctos?',q3:'¿La IA inventa cosas sobre ti?',q4:'¿Funcionaron tus arreglos?',
+ demoBanner:'<b>Datos de ejemplo.</b> Casa Coquí Café es un negocio ficticio de demostración. Sus datos y cada respuesta de IA que ves aquí fueron escritos por nuestro equipo para mostrar el proceso; la verificación, los tickets y las puntuaciones los calcula el código real. Agrega tu negocio para hacer revisiones en vivo con Gemini.',
+ fix:(v,s,w)=>`<span><b>${v}</b>confirmados por una nueva revisión</span><span><b>${s}</b>aprobados, pero la IA sigue equivocada</span><span><b>${w}</b>esperan tu aprobación</span>`,
+ stillWrong:'Arreglo aprobado · la IA lo volvió a decir en la última revisión, así que sigue abierto',
+ noSearch:'respondió sin búsqueda web (cuota de búsqueda agotada)',evQuote:'Las palabras exactas de la IA',evFull:'Ver la respuesta completa de la IA',factSrc:'Tu fuente aprobada',checkedOn:'revisada',nextStep:'Siguiente paso sugerido',
+ aborted:'Se acabó la cuota de Gemini y la revisión se detuvo. No se calculó ninguna puntuación y tus resultados anteriores no cambiaron. Intenta en unos minutos o usa una clave de pago.',
+ fStill:(id,h)=>`↻ Arreglo aprobado, pero la IA lo sigue diciendo: ${h} → el Ticket #${id} sigue abierto`,
+ abortedErr:'El servicio de IA en vivo no responde (revisa la clave y el modelo). La revisión se detuvo; no se calculó nada y tus resultados anteriores no cambiaron.',
+ fixes:{price_usd:'Revisa la página que citó la IA. Si muestra un precio viejo, actualiza tu menú y tus listados (Google, Yelp, apps de entrega).',availability:'Indica claramente en tu menú en línea (como texto, no solo PDF o foto) si este producto está disponible, y cuándo si es de temporada. Luego corrige el listado viejo que citó la IA.',closed:'Urgente: confirma que tu perfil de Google y Yelp te muestran abierto, y pide al directorio viejo que corrija o quite el aviso de cerrado.',address:'Corrige la dirección en todos los listados para que coincida con tu sitio web.',hours:'Pon exactamente el mismo horario en tu sitio web, Google y Yelp.',policy:'Publica esta política en una oración clara en tu sitio (preguntas frecuentes) y corrige los listados que digan otra cosa.',invented:'Confirma que no ofreces esto. Si no, respóndelo claramente en tu sitio web para que la IA deje de repetirlo.'},
  s1:(m,n)=>`${m} <small>de ${n} búsquedas</small>`,s2:(c,t)=>`${c} <small>de ${t} datos correctos</small>`,s3:(h,n)=>`${h} <small>de ${n} preguntas trampa</small>`,
  was:v=>`Antes: ${v} en tu primera revisión`,
  runTitle:'Hacer una revisión',runLeadDemo:'Mira la revisión pregunta por pregunta. Cada respuesta incorrecta se señala y se convierte en un ticket al momento.',
@@ -376,12 +401,12 @@ es:{navOverview:'Resumen',navIssues:'Problemas',navPlan:'Plan de crecimiento',na
  fCreated:(id,sev,h)=>`⚑ Señalado: ${h} → Ticket #${id} creado (${sev})`,fRepeat:(id,h)=>`↻ Mismo problema otra vez: ${h} → agregado al Ticket #${id}`,fFixed:(id,h)=>`✓ Resuelto: ${h} → Ticket #${id} confirmado`,
  done:(n,c,f)=>`Revisión terminada. ${c} ${c===1?'problema nuevo señalado y convertido en ticket':'problemas nuevos señalados y convertidos en tickets'}${f?`, ${f} ${f===1?'arreglo confirmado':'arreglos confirmados'}`:''}. Puntuaciones actualizadas.`,
  review:'Revisar problemas',couldnt:'No se pudo revisar',
- ovTitle:'Necesita tu aprobación',ovLead:'Lo más importante para revisar.',ovAll:'Ver todos los problemas',ovPlan:'Ver tu plan de crecimiento',
+ ovTitle:'Necesita tu atención',ovLead:'Lo que la IA dice mal de ti ahora mismo, lo más grave primero.',ovAll:'Ver todos los problemas',ovPlan:'Ver tu plan de crecimiento',
  attnTitle:'Problemas',attnLead:'Cada vez que un asistente de IA les dice a tus clientes algo que contradice tus datos aprobados, abrimos un ticket. Lo más grave primero. Nada cambia sin tu aprobación.',
  tabs:{todo:'Necesita tu aprobación',progress:'En nueva revisión',done:'Cerrados'},
  says:'Lo que la IA les dice a tus clientes',saidBefore:'Lo que la IA decía antes',truth:'La verdad',caught:'Detectado por',source:'Fuente probable',noSource:'la IA no la mostró',
  approve:'Aprobar arreglo',reject:'No es un problema',look:'Investigar',
- status:{pending:'Esperando tu aprobación',approved:'Arreglo aprobado · esperando la próxima revisión para confirmarlo',verified:'Resuelto · la IA ya lo dice bien',rejected:'Descartado',investigating:'Lo estamos investigando'},
+ status:{pending:'Esperando tu aprobación',approved:'Arreglo aprobado · esperando la próxima revisión para confirmar que funcionó',verified:'Resuelto · la IA ya lo dice bien',rejected:'Descartado',investigating:'Lo estamos investigando'},
  sev:{critical:'Crítico',high:'Alto',medium:'Medio',low:'Bajo'},emptyTab:'No hay nada aquí por ahora.',
  planTitle:'Tu plan de crecimiento',planLead:'Pasos sencillos para aparecer más en las respuestas de IA, en el orden que recomendamos. Podemos escribir casi todo por ti.',
  when:{high:'Haz esto primero',medium:'Después',low:'Cuando tengas tiempo'},why:'Por qué',what:'Qué hacer',time:'Tiempo',help:'Cómo ayuda',
@@ -402,7 +427,7 @@ es:{navOverview:'Resumen',navIssues:'Problemas',navPlan:'Plan de crecimiento',na
  p3h:'Nunca',p3:['Escribir reseñas falsas o pagadas','Usar trucos o texto oculto para engañar a la IA','Hablar mal de la competencia','Decir que un arreglo funcionó sin que una nueva revisión lo compruebe'],
  accountable:'Tú eres dueño de los datos de tu negocio y apruebas cada cambio público. proof flower es responsable de las revisiones: una persona revisa los problemas señalados y verifica nuestros propios resultados cada semana, y cada decisión queda registrada.',
  howTitle:'Cómo funciona tu puntuación',
- formula:`<p><b>Puntuación de salud en IA</b> = 40% datos correctos + 35% aparecer + 25% no inventar.</p><p><b>Aparecer</b> da más crédito por ser recomendado primero.</p><p><b>Datos correctos</b> pesa los errores según cuánto te afectan. Si no podemos verificar algo, nunca cuenta en tu contra.</p><p><b>Inventar</b> se mide con preguntas trampa. Decir “no estoy seguro” es la respuesta segura.</p><p>Detrás de escena: la IA convierte respuestas en datos, y código simple (no IA) decide qué es correcto.</p>`,
+ formula:`<p><b>Puntuación de salud en IA</b> = 40% datos correctos + 35% aparecer + 25% no inventar. Es nuestro propio número resumen para seguir un negocio en el tiempo, no un estándar de la industria.</p><p><b>Aparecer</b> da más crédito por ser recomendado primero.</p><p><b>Datos correctos</b> pesa los errores según cuánto te afectan. Si no podemos verificar algo, nunca cuenta en tu contra.</p><p><b>Inventar</b> se mide con preguntas trampa. Decir “no estoy seguro” es la respuesta segura.</p><p>Detrás de escena: la IA convierte respuestas en datos, y código simple (no IA) decide qué es correcto.</p>`,
  testBtn:'Probar nuestro verificador (respuestas de demo)',testing:'Probando nuestro verificador con respuestas etiquetadas a mano…',
  testResult:(p,r,e,n)=>`Nuestro verificador encontró el ${r}% de los datos que debía, y el ${p}% de lo que encontró era correcto (${e}% coincidieron perfectamente), en ${n} respuestas etiquetadas a mano.`,
  setupTitle:'Agregar un negocio',setupLead:'Sube una hoja de cálculo con los datos del negocio. Creamos su lista de preguntas y puedes hacer una revisión en vivo con Gemini enseguida.',
@@ -415,7 +440,7 @@ es:{navOverview:'Resumen',navIssues:'Problemas',navPlan:'Plan de crecimiento',na
  yourBiz:'Tus negocios',remove:'Eliminar',demoTag:'demo',removed:'Eliminado.',
  footer:'proof flower · Montclair State University · HSI Battle of the Brains 2026 · Los datos de demostración siempre están señalados.',analyst:'Vista técnica',
  logged:'Guardado. Tu decisión quedó registrada.',
- hl:{closed:'La IA dice que cerraste permanentemente',price:(p,c)=>`Precio incorrecto de ${p}${c?` (${c})`:''}`,hours:'Horario incorrecto',address:'Dirección incorrecta',delivery:'Información de entrega incorrecta',reservations:'Información de reservaciones incorrecta','catering minimum':'Mínimo de catering incorrecto',policy:'Política incorrecta',avail:p=>`Disponibilidad incorrecta de ${p}`,invented:'La IA inventó algo sobre ti'},
+ hl:{closed:'La IA dice que cerraste permanentemente',price:(p,c)=>`Precio incorrecto de ${p}${c?` (${c})`:''}`,hours:'Horario incorrecto',address:'Dirección incorrecta',delivery:'Información de entrega incorrecta',reservations:'Información de reservaciones incorrecta','catering minimum':'Mínimo de catering incorrecto',policy:'Política incorrecta',avail:p=>`Disponibilidad incorrecta de ${p}`,invented:'La IA podría haber inventado algo sobre ti'},
  val:{available:'Disponible ahora',notInFacts:'No está en tus datos aprobados',unavailable:'No disponible por ahora',closed:'Cerrado permanentemente',open:'Abierto'},
  ctx:{lunch:'almuerzo',dinner:'cena',each:'cada uno'}}
 };
@@ -453,7 +478,7 @@ function hours(v){return String(v).replace(/\b(\d{1,2}):(\d{2})\b/g,(m,h,mm)=>{h
   .replace(/\bdaily\b/i,LANG==='es'?'Todos los días':'Every day').replace(/tue-sun/i,LANG==='es'?'Mar–Dom':'Tue–Sun').replace(/closed monday/i,LANG==='es'?'cerrado los lunes':'closed Monday');}
 
 // This switches to another business and reloads everything for it.
-function switchBiz(id){BIZ=id;try{localStorage.setItem('pf_biz',id)}catch(e){};TAB='todo';QTAB='all';load();}
+function switchBiz(id){BIZ=id;try{localStorage.setItem('pf_biz',id)}catch(e){};TAB=null;QTAB='all';load();}
 
 // This loads everything for the chosen business: its checks (first and latest), tickets, questions,
 // approved facts and growth plan. Then it draws the page.
@@ -485,19 +510,25 @@ function render(){
   const chip=meta.demo?t('demo'):(meta.sample_data?t('sample'):t('live'));
   $('dataChip').textContent=chip; $('dataChip').classList.toggle('live',!meta.demo&&!meta.sample_data);
   $('sub').textContent=t('sub')(biz.location||'',A&&A.label,B&&B.label);
+  $('demoBanner').innerHTML=meta.demo?t('demoBanner'):''; $('demoBanner').style.display=meta.demo?'block':'none';
   renderHealth(); renderRunPanel(); renderIssues(); renderOverview(); renderPlan(); renderQuestions(); renderBizList(); renderCounts();
 }
 
 // This fills the health score card and the three question cards (or an empty state before the first check).
 function renderHealth(){
-  if(!B){$('score').textContent='–';$('arc').setAttribute('stroke-dasharray','0 999');$('grade').textContent='';$('grade').style.display='none';$('summary').textContent=t('noChecks');$('delta').style.display='none';
+  if(!B){$('s4').innerHTML='';$('score').textContent='–';$('arc').setAttribute('stroke-dasharray','0 999');$('grade').textContent='';$('grade').style.display='none';$('summary').textContent=t('noChecks');$('delta').style.display='none';
     ['s1','s2','s3'].forEach(i=>$(i).textContent='–');['w1','w2','w3'].forEach(i=>$(i).textContent='');['m1','m2','m3'].forEach(i=>$(i).style.width='0');return;}
-  const s=B.scores, s0=A&&A.scores, score=Math.round(s.trust??0);
+  const hs=x=>x?(x.health??x.trust):null;
+  const s=B.scores, s0=A&&A.scores, score=hs(s)==null?null:Math.round(hs(s));
+  const ts0=REPORT.tickets;
+  $('s4').innerHTML=t('fix')(ts0.filter(x=>x.status==='verified').length,ts0.filter(x=>x.still_wrong).length,ts0.filter(x=>['pending','investigating'].includes(x.status)).length);
+  if(score==null){$('score').textContent='–';$('arc').setAttribute('stroke-dasharray','0 999');$('grade').style.display='none';}
+  else{
   $('score').textContent=score; $('arc').setAttribute('stroke-dasharray',`${(score/100)*2*Math.PI*94} 999`);
-  $('grade').style.display='';$('grade').textContent=t('grades')[score<40?0:score<70?1:2];
+  $('grade').style.display='';$('grade').textContent=t('grades')[score<40?0:score<70?1:2];}
   const ts=REPORT.tickets, pend=ts.filter(x=>['pending','investigating'].includes(x.status)).length, prog=ts.filter(x=>x.status==='approved').length;
-  $('summary').textContent=t('summary')(s.visibility.mentioned,s.visibility.questions,s0?s0.visibility.mentioned:null,pend,prog);
-  $('delta').style.display=''; $('delta').textContent=s0?t('delta')(Math.round(s.trust-s0.trust)):t('first');
+  $('summary').textContent=(score==null?t('noScore')+' ':'')+t('summary')(s.visibility.mentioned,s.visibility.questions,s0?s0.visibility.mentioned:null,pend,prog);
+  $('delta').style.display=''; $('delta').textContent=(s0&&hs(s0)!=null&&score!=null)?t('delta')(Math.round(hs(s)-hs(s0))):t('first');
   const tot=s.accuracy.correct+s.accuracy.incorrect, tot0=s0?s0.accuracy.correct+s0.accuracy.incorrect:0;
   $('s1').innerHTML=t('s1')(s.visibility.mentioned,s.visibility.questions); $('s2').innerHTML=t('s2')(s.accuracy.correct,tot); $('s3').innerHTML=t('s3')(s.hallucination.hallucinated,s.hallucination.questions);
   $('w1').textContent=s0?t('was')(`${s0.visibility.mentioned}/${s0.visibility.questions}`):''; $('w2').textContent=s0?t('was')(`${s0.accuracy.correct}/${tot0}`):''; $('w3').textContent=s0?t('was')(`${s0.hallucination.hallucinated}/${s0.hallucination.questions}`):'';
@@ -539,13 +570,15 @@ async function startRun(){
       const flags=s.tickets.map(tk=>{const h=headline(tk), sv=t('sev')[tk.priority]||tk.priority;
         if(tk.event==='created'){created++;return `<div class="flag created">${esc(t('fCreated')(tk.id,sv,h))}</div>`;}
         if(tk.event==='fixed'){fixed++;return `<div class="flag fixed">${esc(t('fFixed')(tk.id,h))}</div>`;}
+        if(tk.event==='still_wrong') return `<div class="flag repeat">${esc(t('fStill')(tk.id,h))}</div>`;
         return `<div class="flag repeat">${esc(t('fRepeat')(tk.id,h))}</div>`;}).join('');
       const row=document.createElement('div'); row.className='frow';
       row.innerHTML=`<div class="top"><span class="icon ${c}">${g}</span><div><div class="qt">${esc(r.question)}</div>
-        <div class="rs">${r.error?esc(t('couldnt')+': '+r.error):(t('res')[rk(r.outcome)]||r.outcome)}</div></div></div>${flags}`;
+        <div class="rs">${r.error?esc(t('couldnt')+': '+r.error):(t('res')[rk(r.outcome)]||r.outcome)}${r.web_search===false?` · ${t('noSearch')}`:''}</div></div></div>${flags}`;
       $('feed').prepend(row);
+      if(s.aborted){ $('runSum').style.display='block'; $('runSum').textContent=s.aborted==='quota'?t('aborted'):t('abortedErr'); break; }
       if(s.done){ $('runSum').style.display='block';
-        $('runSum').innerHTML=`${esc(t('done')(s.total,created,fixed))} <button class="btn soft small" style="margin-left:8px" onclick="showView('issues')">${t('review')}</button>`; }
+        $('runSum').innerHTML=`${esc(t('done')(s.total,created,fixed))} <button class="btn soft small" style="margin-left:8px" onclick="showView('issues')">${t('review')}</button>`; break; }
     }
     const keep=$('runPanel').innerHTML; RUNNING=false; await load(); $('runPanel').innerHTML=keep;
     const b=$('runBtn'); if(b){b.disabled=false; const nn=nextRun(); b.textContent=nn.label;}
@@ -575,14 +608,21 @@ function val(x,v){
 }
 // This builds one ticket card with only what an owner needs: number, severity, status, what AI says vs the truth,
 // which question caught it, the likely source, and the decision buttons.
+// This shows a cited web page as a link when it is a real public page, or as plain text for sample pages.
+const srcLink=u=>/^https:\/\//.test(u||'')&&!/\.example(\/|$)/.test(host(u)+'/')?`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(host(u))}</a>`:esc(host(u));
 function issueCard(x){
   const src=(x.evidence_citations||[])[0], open=['pending','investigating'].includes(x.status);
+  const st=x.still_wrong?`<span class="status warnst">${t('stillWrong')}</span>`:`<span class="status">${t('status')[x.status]||x.status}</span>`;
+  const next=LANG==='es'?(t('fixes')[x.product_id==='business'&&x.field==='availability'?'closed':x.field]||x.proposal):x.proposal;
   return `<div class="issue ${x.priority}" id="tk${x.id}"><div class="stripe"></div><div class="body">
-    <div class="row"><span class="tid">#${x.id}</span><span class="sev ${x.priority}">${t('sev')[x.priority]||x.priority}</span><span class="status">${t('status')[x.status]||x.status}</span></div>
+    <div class="row"><span class="tid">#${x.id}</span><span class="sev ${x.priority}">${t('sev')[x.priority]||x.priority}</span>${st}</div>
     <h3>${esc(headline(x))}</h3>
     <div class="compare"><div class="says"><small>${x.status==='verified'?t('saidBefore'):t('says')}</small><b>${esc(val(x,x.ai_value))}</b></div>
     <div class="truth"><small>${t('truth')}</small><b>${esc(val(x,x.verified_value))}</b></div></div>
-    <p class="meta"><b>${t('caught')}:</b> “${esc(x.question_text||x.question_id)}”<br><b>${t('source')}:</b> ${src?esc(host(src)):t('noSource')}</p>
+    <p class="meta"><b>${t('caught')}:</b> “${esc(x.question_text||x.question_id)}”<br><b>${t('source')}:</b> ${src?srcLink(src):t('noSource')}
+      ${x.source_url?`<br><b>${t('factSrc')}:</b> ${srcLink(x.source_url)}${x.fact_checked_at?` · ${t('checkedOn')} ${esc(x.fact_checked_at)}`:''}`:''}</p>
+    ${(open||x.still_wrong)&&next?`<div class="nextstep"><b>${t('nextStep')}:</b> ${esc(next)}</div>`:''}
+    ${x.evidence_answer?`<details class="evidence"><summary>${t('evFull')}</summary>${x.evidence_quote?`<p class="small">${t('evQuote')}: <q>${esc(x.evidence_quote)}</q></p>`:''}<div class="answer">${esc(x.evidence_answer)}</div></details>`:''}
     ${open?`<div class="actions"><button class="btn" onclick="decide(${x.id},'approve')">${t('approve')}</button>
       ${x.status==='pending'?`<button class="btn soft" onclick="decide(${x.id},'investigate')">${t('look')}</button>`:''}<button class="btn soft" onclick="decide(${x.id},'reject')">${t('reject')}</button></div>`:''}
   </div></div>`;
@@ -591,13 +631,14 @@ function issueCard(x){
 function renderIssues(){
   const ts=REPORT.tickets;
   const groups={todo:ts.filter(x=>['pending','investigating'].includes(x.status)),progress:ts.filter(x=>x.status==='approved'),done:ts.filter(x=>['verified','rejected'].includes(x.status))};
+  if(!TAB) TAB=['todo','progress','done'].find(k=>groups[k].length)||'todo';   // open the first tab that has something in it
   $('tabs').innerHTML=Object.keys(groups).map(k=>`<button class="${TAB===k?'on':''}" onclick="TAB='${k}';renderIssues()">${t('tabs')[k]} (${groups[k].length})</button>`).join('');
-  const list=groups[TAB].sort((a,b)=>(SEVRANK[a.priority]??4)-(SEVRANK[b.priority]??4)||b.id-a.id);
+  const list=groups[TAB].sort((a,b)=>(b.still_wrong?1:0)-(a.still_wrong?1:0)||(SEVRANK[a.priority]??4)-(SEVRANK[b.priority]??4)||b.id-a.id);
   $('issues').innerHTML=list.length?list.map(issueCard).join(''):`<div class="empty">${t('emptyTab')}</div>`;
 }
 // This fills the Overview's "Needs your OK" list with the top 3 waiting issues.
 function renderOverview(){
-  const pend=REPORT.tickets.filter(x=>['pending','investigating'].includes(x.status)).sort((a,b)=>(SEVRANK[a.priority]??4)-(SEVRANK[b.priority]??4));
+  const pend=REPORT.tickets.filter(x=>['pending','investigating'].includes(x.status)||x.still_wrong).sort((a,b)=>(SEVRANK[a.priority]??4)-(SEVRANK[b.priority]??4));
   $('ovIssues').innerHTML=pend.length?pend.slice(0,3).map(issueCard).join(''):`<div class="empty">${t('emptyTab')}</div>`;
 }
 // This sends the owner's decision (approve, reject, look into it) to the backend, then refreshes.
@@ -710,7 +751,9 @@ async function testChecker(){
     const m=d.metrics; $('howOut').textContent=t('testResult')(m.precision,m.recall,m.exact_match_rate,d.cases.length);}catch(e){$('howOut').textContent=e.message}
 }
 
-showView((location.hash||'#overview').slice(1).replace(/[^a-z]/g,'')||'overview'); render(); load().catch(e=>toast(e.message));
+const hashView=()=>showView((location.hash||'#overview').slice(1).replace(/[^a-z]/g,'')||'overview');
+window.addEventListener('hashchange',hashView);
+hashView(); render(); load().catch(e=>toast(e.message));
 </script>
 </body>
 </html>

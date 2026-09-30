@@ -32,9 +32,10 @@ def test_scoring_formulas_by_hand():
     assert card['health'] == round(0.4 * 40 + 0.35 * 43.3 + 0.25 * 50, 1)
 
 
-def test_health_renormalizes_missing_parts():
-    assert scoring.health_score(80, None, None) == 80.0
-    assert scoring.health_score(None, None, None) is None
+def test_health_needs_accuracy_and_visibility():
+    assert scoring.health_score(80, 60, None) == round((0.4 * 80 + 0.35 * 60) / 0.75, 1)   # renormalized
+    assert scoring.health_score(None, 0, 0) is None      # "I don't know" everywhere is not a good score
+    assert scoring.health_score(80, None, 0) is None
 
 
 def test_baseline_then_retest_improves_and_keeps_unfixed_ticket_open(client):
