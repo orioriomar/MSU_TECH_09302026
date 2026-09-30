@@ -4,7 +4,7 @@
 
 Montclair State University · HSI Battle of the Brains 2026 · *"The New Front Door: Trustworthy AI Product Discovery"*
 
-> **Live app:** `<ADD RENDER URL>`: opens straight into a complete demo. No login and no API key needed.
+> **Live app: https://msu-tech-09302026.onrender.com**: opens straight into a complete demo. No login and no API key needed.
 > The first load after a period of inactivity can take about a minute, because the free hosting plan sleeps.
 > **Run it yourself:** `./run.sh` (Python) or `./run.sh docker`, then open http://127.0.0.1:8000
 
@@ -169,7 +169,7 @@ Python 3.12 · FastAPI · Pydantic v2 · SQLite · Google Gemini (`google-genai`
 
 ## Run it
 
-**Hosted:** open the live link above.
+**Hosted:** https://msu-tech-09302026.onrender.com
 
 **Locally (macOS / Linux, Python 3.10+):**
 ```bash
