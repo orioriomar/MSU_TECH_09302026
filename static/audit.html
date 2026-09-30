@@ -1,0 +1,716 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>proof flower · AI health check</title>
+<link rel="icon" href="/static/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== Brand: proof flower (Montclair State BOTB 2026) =====
+   Palette #000000 #3E0B52 #654A87 #9A85B4 #E6D7F8 #FFFFFF · Font: Arimo */
+:root{
+  --black:#000; --p1:#3E0B52; --p2:#654A87; --p3:#9A85B4; --p4:#E6D7F8; --white:#fff;
+  --ink:#140a1c; --muted:#5f5470; --line:#e8e0f2; --paper:#faf7fd;
+  --bad:#b3413a; --bad-soft:#fbe4e0; --crit:#7a1026; --crit-soft:#f7dbe1; --warn:#8a5a00; --warn-soft:#f8ecd2;
+  --grad:linear-gradient(115deg,#050007 0%,#3E0B52 55%,#3b2b46 100%);
+  --font:"Arimo",Arial,"Helvetica Neue",system-ui,sans-serif; --r:16px;
+}
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 var(--font);overflow-x:hidden}
+h1,h2,h3{letter-spacing:-.02em}
+header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.hwrap{max-width:1240px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:12px;height:64px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand .flower{height:34px;width:34px}
+.brand .word{height:22px}
+.spacer{flex:1}
+select.biz{font:600 14px var(--font);padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);max-width:230px}
+.chip{font:600 12px var(--font);padding:5px 10px;border-radius:99px;background:var(--p4);color:var(--p1);white-space:nowrap}
+.chip.live{background:var(--p1);color:#fff}
+.lang{display:flex;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.lang button{border:0;background:#fff;padding:6px 12px;font:700 13px var(--font);cursor:pointer;color:var(--muted)}
+.lang button.on{background:var(--p1);color:#fff}
+.app{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:230px minmax(0,1fr);gap:28px;padding:0 20px}
+.side{position:sticky;top:80px;align-self:start;padding-top:26px}
+.side nav{display:flex;flex-direction:column;gap:4px}
+.side button{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;border:0;background:transparent;padding:11px 14px;border-radius:12px;font:600 15px var(--font);color:var(--muted);cursor:pointer}
+.side button:hover{background:var(--p4);color:var(--p1)}
+.side button.on{background:var(--p1);color:#fff}
+.side .count{font:700 12px var(--font);background:rgba(62,11,82,.08);padding:2px 8px;border-radius:99px}
+.side button.on .count{background:rgba(255,255,255,.2)}
+.side .count.alert{background:var(--bad);color:#fff}
+.side .sep{height:1px;background:var(--line);margin:8px 6px}
+main{min-width:0;padding-bottom:40px}
+.view{display:none} .view.on{display:block}
+.hello{padding:30px 0 6px}
+.hello h1{font:700 clamp(28px,4.4vw,42px)/1.1 var(--font);margin:0 0 6px}
+.hello p{margin:0;color:var(--muted)}
+section{padding:34px 0 6px}
+section>h2,.v-title{font:700 28px/1.2 var(--font);margin:0 0 6px}
+.lead{color:var(--muted);margin:0 0 18px;max-width:720px}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.card>h3:first-child{margin-top:0}
+a.btn{display:inline-block;text-decoration:none}
+.health{display:grid;grid-template-columns:240px 1fr;gap:26px;align-items:center;background:var(--grad);color:#fff;border-radius:22px;padding:26px;margin:20px 0}
+.gauge{position:relative;width:210px;height:210px;margin:0 auto}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge .num b{font:700 60px/1 var(--font)}
+.gauge .num span{font-size:13px;color:var(--p4)}
+.grade{display:inline-block;font:700 12px var(--font);letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border-radius:99px;background:rgba(230,215,248,.18);color:var(--p4);margin-bottom:10px}
+.health h2{font:700 26px/1.2 var(--font);margin:0 0 8px}
+.health p{margin:0;color:#e9def6;font-size:17px}
+.health .delta{display:inline-block;margin-top:14px;font-weight:700;background:#fff;color:var(--p1);padding:6px 12px;border-radius:99px;font-size:14px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.q{font:700 15px var(--font);color:var(--muted);margin:0 0 10px}
+.stat{font:700 34px/1.1 var(--font);margin:0;color:var(--p1)}
+.stat small{font:500 16px var(--font);color:var(--muted)}
+.was{font-size:14px;color:var(--muted);margin-top:6px;min-height:1em}
+.meter{height:8px;border-radius:9px;background:var(--p4);margin-top:14px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:9px;background:var(--p2)}
+.btn{font:700 15px var(--font);border-radius:12px;padding:11px 18px;border:1px solid var(--p1);background:var(--p1);color:#fff;cursor:pointer}
+.btn:hover{filter:brightness(1.15)}
+.btn.soft{background:#fff;color:var(--p1);border-color:var(--line)}
+.btn.small{padding:8px 13px;font-size:14px;border-radius:10px}
+.btn:disabled{opacity:.5;cursor:wait}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.small{font-size:14px;color:var(--muted)}
+.empty{color:var(--muted);padding:18px;background:#fff;border:1px dashed var(--line);border-radius:var(--r)}
+/* run panel + live feed */
+.run{border:2px solid var(--p4)}
+.run h3{margin:0 0 4px;font-size:19px}
+.progress{height:10px;border-radius:9px;background:var(--p4);overflow:hidden;margin:14px 0 6px;display:none}
+.progress i{display:block;height:100%;width:0;background:var(--p2);transition:width .3s}
+.feed{display:grid;gap:8px;margin-top:10px;max-height:420px;overflow:auto}
+.frow{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}
+.frow .top{display:flex;gap:10px;align-items:flex-start}
+.frow .qt{font-weight:600}
+.frow .rs{font-size:14px;color:var(--muted)}
+.flag{margin:8px 0 0 36px;padding:8px 10px;border-radius:10px;font-size:14px;font-weight:600}
+.flag.created{background:var(--bad-soft);color:var(--bad)}
+.flag.repeat{background:var(--warn-soft);color:var(--warn)}
+.flag.fixed{background:var(--p4);color:var(--p1)}
+.flag a{color:inherit}
+.summary{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--p1);color:#fff;font-weight:600;display:none}
+.icon{flex:none;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.icon.ok{background:var(--p4);color:var(--p1)} .icon.no{background:var(--bad-soft);color:var(--bad)} .icon.meh{background:var(--warn-soft);color:var(--warn)}
+/* tickets */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tabs button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:8px 14px;font:700 14px var(--font);cursor:pointer;color:var(--muted)}
+.tabs button.on{background:var(--p1);border-color:var(--p1);color:#fff}
+.issues{display:grid;gap:14px}
+.issue{display:grid;grid-template-columns:6px minmax(0,1fr);border-radius:var(--r);overflow:hidden;background:#fff;border:1px solid var(--line)}
+.issue .stripe{background:var(--p3)}
+.issue.critical .stripe{background:var(--crit)} .issue.high .stripe{background:var(--bad)} .issue.medium .stripe{background:var(--warn)} .issue.low .stripe{background:var(--p3)}
+.issue .body{padding:16px 20px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tid{font:700 13px var(--font);color:var(--p2)}
+.sev{font:700 11px var(--font);letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:99px}
+.sev.critical{background:var(--crit-soft);color:var(--crit)} .sev.high{background:var(--bad-soft);color:var(--bad)}
+.sev.medium{background:var(--warn-soft);color:var(--warn)} .sev.low{background:var(--p4);color:var(--p1)}
+.status{font-size:13px;color:var(--muted)}
+.issue h3{font:700 19px/1.35 var(--font);margin:10px 0 12px}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.compare div{border-radius:12px;padding:12px 14px}
+.compare .says{background:var(--bad-soft)} .compare .truth{background:var(--p4)}
+.compare small{display:block;font:700 11px var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.compare b{font-size:17px}
+.meta{font-size:14px;color:var(--muted);margin:12px 0 0}
+.meta b{color:var(--ink);font-weight:600}
+/* plan */
+.plan{display:grid;gap:14px}
+.step{display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.step .n{width:40px;height:40px;border-radius:50%;background:var(--p4);color:var(--p1);display:flex;align-items:center;justify-content:center;font:700 18px var(--font)}
+.step h3{margin:2px 0 6px;font:700 18px/1.35 var(--font)}
+.step p{margin:4px 0;color:var(--muted)} .step p b{color:var(--ink)}
+.when{font:700 12px var(--font);letter-spacing:.06em;text-transform:uppercase}
+.when.high{color:var(--bad)} .when.medium{color:var(--warn)} .when.low{color:var(--p2)}
+.draft{max-height:280px;overflow:auto;margin-top:12px;background:var(--paper);border:1px dashed var(--p3);border-radius:12px;padding:14px;white-space:pre-wrap;font-size:14px}
+input[type=text],input[type=url]{font:inherit;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;width:100%}
+.check{display:flex;gap:10px;flex-wrap:wrap} .check input{flex:1;min-width:220px;width:auto}
+/* questions */
+.qstats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.qstat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;min-width:150px}
+.qstat b{font:700 26px var(--font);display:block;color:var(--p1)} .qstat span{font-size:14px;color:var(--muted)}
+.qlist{display:grid;gap:12px}
+.qcard{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.qhead{display:flex;gap:10px 12px;align-items:flex-start;flex-wrap:wrap}
+.qnum{flex:none;font:700 13px var(--font);color:var(--p1);background:var(--p4);border-radius:9px;padding:4px 8px}
+.qtext2{font:700 17px/1.4 var(--font);flex:1;min-width:0}
+.qtype{font:700 11px var(--font);letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:99px;white-space:nowrap;background:var(--p4);color:var(--p1)}
+.qtype.stress{background:var(--warn-soft);color:var(--warn)} .qtype.accuracy{background:#efe8f8;color:var(--p2)}
+.qmeta{margin:10px 0 0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.qmeta>span{color:var(--muted)}
+.qres{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tlink{font:700 12px var(--font);background:var(--bad-soft);color:var(--bad);padding:3px 8px;border-radius:99px;cursor:pointer;border:0}
+details summary{cursor:pointer;color:var(--p2);font-size:14px;font-weight:600}
+.answer{margin-top:8px;padding:12px 14px;background:var(--paper);border-radius:10px;font-size:15px}
+/* setup */
+.steps3{display:grid;gap:14px}
+.sn{display:inline-flex;width:28px;height:28px;border-radius:50%;background:var(--p1);color:#fff;align-items:center;justify-content:center;font-weight:700;font-size:14px;margin-right:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px} .grid2 label,.full label{display:block;font:600 14px var(--font);margin-bottom:6px}
+.file{display:block;border:2px dashed var(--p3);border-radius:14px;padding:18px;text-align:center;background:var(--paper);cursor:pointer}
+.ok-box{margin-top:14px;padding:14px;border-radius:12px;background:var(--p4);color:var(--p1);display:none}
+.err{color:var(--bad);font-weight:600;margin-top:10px}
+.bizrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+/* promise */
+.promise{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.promise h3{font:700 17px var(--font);margin:0 0 8px}
+.promise ul{margin:0;padding-left:18px;color:var(--muted)} .promise li{margin:5px 0}
+details.how{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin-top:14px}
+details.how>summary{font:700 17px var(--font);color:var(--p1)}
+.formula p{margin:8px 0;color:var(--muted)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--p1);color:#fff;padding:12px 18px;border-radius:12px;font-size:15px;display:none;z-index:20;max-width:90vw}
+footer{max-width:1240px;margin:0 auto;padding:30px 20px 50px;color:var(--muted);font-size:14px}
+footer a{color:var(--p2)}
+@media(max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr);gap:0}
+  .side{min-width:0;position:sticky;top:64px;z-index:9;background:rgba(250,247,253,.96);padding:8px 0;margin:0 -20px;border-bottom:1px solid var(--line)}
+  .side nav{flex-direction:row;overflow-x:auto;padding:0 20px} .side button{white-space:nowrap;padding:8px 12px} .side .sep{display:none}
+  .health{grid-template-columns:1fr;text-align:center} .three,.promise,.grid2{grid-template-columns:1fr}
+  header .chip,.brand .word{display:none} select.biz{max-width:150px}
+}
+@media(max-width:600px){.compare{grid-template-columns:1fr}.qmeta{grid-template-columns:1fr;gap:2px}.qstat{min-width:0;flex:1;padding:10px 12px}}
+</style>
+</head>
+<body>
+<header><div class="hwrap">
+  <div class="brand"><img class="flower" src="/static/mark.png" alt=""><img class="word" src="/static/wordmark.png" alt="proof flower"></div>
+  <div class="spacer"></div>
+  <select class="biz" id="bizSel" onchange="switchBiz(this.value)" aria-label="Business"></select>
+  <span class="chip" id="dataChip"></span>
+  <div class="lang"><button id="bEN" class="on" onclick="setLang('en')">EN</button><button id="bES" onclick="setLang('es')">ES</button></div>
+</div></header>
+
+<div class="app">
+<aside class="side"><nav id="sidenav">
+  <button data-v="overview" onclick="showView('overview')"><span data-t="navOverview"></span></button>
+  <button data-v="issues" onclick="showView('issues')"><span data-t="navIssues"></span><span class="count" id="cIssues"></span></button>
+  <button data-v="plan" onclick="showView('plan')"><span data-t="navPlan"></span><span class="count" id="cPlan"></span></button>
+  <button data-v="questions" onclick="showView('questions')"><span data-t="navQuestions"></span><span class="count" id="cQuestions"></span></button>
+  <button data-v="promise" onclick="showView('promise')"><span data-t="navPromise"></span></button>
+  <div class="sep"></div>
+  <button data-v="setup" onclick="showView('setup')"><span data-t="navSetup"></span></button>
+</nav></aside>
+
+<main>
+  <!-- OVERVIEW -->
+  <div class="view" id="v-overview">
+    <div class="hello"><h1 id="hello"></h1><p id="sub"></p></div>
+    <div class="health">
+      <div class="gauge">
+        <svg width="210" height="210" viewBox="0 0 220 220"><circle cx="110" cy="110" r="94" fill="none" stroke="rgba(230,215,248,.18)" stroke-width="16"/>
+        <circle id="arc" cx="110" cy="110" r="94" fill="none" stroke="#E6D7F8" stroke-width="16" stroke-linecap="round" stroke-dasharray="0 999"/></svg>
+        <div class="num"><b id="score">–</b><span data-t="outOf"></span></div>
+      </div>
+      <div><span class="grade" id="grade"></span><h2 data-t="healthTitle"></h2><p id="summary"></p><span class="delta" id="delta"></span></div>
+    </div>
+    <div class="three">
+      <div class="card"><p class="q" data-t="q1"></p><p class="stat" id="s1">–</p><p class="was" id="w1"></p><div class="meter"><i id="m1"></i></div></div>
+      <div class="card"><p class="q" data-t="q2"></p><p class="stat" id="s2">–</p><p class="was" id="w2"></p><div class="meter"><i id="m2"></i></div></div>
+      <div class="card"><p class="q" data-t="q3"></p><p class="stat" id="s3">–</p><p class="was" id="w3"></p><div class="meter"><i id="m3" style="background:var(--bad)"></i></div></div>
+    </div>
+    <section><div class="card run" id="runPanel"></div></section>
+    <section>
+      <h2 data-t="ovTitle"></h2><p class="lead" data-t="ovLead"></p>
+      <div class="issues" id="ovIssues"></div>
+      <div class="actions"><button class="btn soft" onclick="showView('issues')" data-t="ovAll"></button><button class="btn soft" onclick="showView('plan')" data-t="ovPlan"></button></div>
+    </section>
+  </div>
+
+  <!-- ISSUES -->
+  <div class="view" id="v-issues"><section>
+    <h2 data-t="attnTitle"></h2><p class="lead" data-t="attnLead"></p>
+    <div class="tabs" id="tabs"></div><div class="issues" id="issues"></div>
+  </section></div>
+
+  <!-- GROWTH PLAN -->
+  <div class="view" id="v-plan"><section>
+    <h2 data-t="planTitle"></h2><p class="lead" data-t="planLead"></p>
+    <div class="plan" id="steps"></div>
+    <div class="card" style="margin-top:18px">
+      <p class="q" data-t="checkTitle"></p>
+      <div class="check"><input type="url" id="url" placeholder="https://your-business.com"><button class="btn" onclick="checkSite()" data-t="checkBtn"></button></div>
+      <p class="small" id="checkNote" style="margin:10px 0 0"></p>
+    </div>
+  </section></div>
+
+  <!-- QUESTIONS -->
+  <div class="view" id="v-questions"><section>
+    <h2 data-t="qTitle"></h2><p class="lead" data-t="qLead"></p>
+    <div class="qstats" id="qstats"></div><div class="tabs" id="qtabs"></div><div class="qlist" id="qlist"></div>
+  </section></div>
+
+  <!-- PROMISE -->
+  <div class="view" id="v-promise"><section>
+    <h2 data-t="promTitle"></h2><p class="lead" data-t="promLead"></p>
+    <div class="promise">
+      <div class="card"><h3 data-t="p1h"></h3><ul data-list="p1"></ul></div>
+      <div class="card"><h3 data-t="p2h"></h3><ul data-list="p2"></ul></div>
+      <div class="card"><h3 data-t="p3h"></h3><ul data-list="p3"></ul></div>
+    </div>
+    <p class="small" style="margin-top:14px" data-t="accountable"></p>
+    <details class="how"><summary data-t="howTitle"></summary><div class="formula" id="formula"></div>
+      <div class="actions"><button class="btn soft small" onclick="testChecker()" data-t="testBtn"></button></div>
+      <p class="small" id="howOut"></p></details>
+  </section></div>
+
+  <!-- SET UP A BUSINESS -->
+  <div class="view" id="v-setup"><section>
+    <h2 data-t="setupTitle"></h2><p class="lead" data-t="setupLead"></p>
+    <div class="steps3">
+      <div class="card"><h3><span class="sn">1</span><span data-t="st1"></span></h3>
+        <p class="small" data-t="st1d"></p>
+        <a class="btn soft small" href="/api/templates/business.csv" data-t="dlTemplate"></a></div>
+      <div class="card"><h3><span class="sn">2</span><span data-t="st2"></span></h3>
+        <label class="file" for="csvFile"><span id="fileName" data-t="pickFile"></span></label>
+        <input type="file" id="csvFile" accept=".csv,text/csv" hidden onchange="pickFile(this)"></div>
+      <div class="card"><h3><span class="sn">3</span><span data-t="st3"></span></h3>
+        <div class="grid2">
+          <div class="full" style="grid-column:1/-1"><label data-t="nameLbl"></label><input type="text" id="bizName" placeholder="Bean &amp; Leaf"></div>
+          <div><label data-t="locLbl"></label><input type="text" id="loc" placeholder="Paterson, NJ"></div>
+          <div><label data-t="catLbl"></label><input type="text" id="cat" placeholder="restaurant"></div>
+        </div>
+        <div class="full" style="margin-top:12px"><label data-t="webLbl"></label><input type="url" id="web" placeholder="https://www.your-business.com"></div>
+        <div class="actions"><button class="btn" id="setupBtn" onclick="setupBusiness()" data-t="setupBtn"></button></div>
+        <div class="err" id="setupErr"></div>
+        <div class="ok-box" id="setupOk"></div></div>
+      <div class="card"><h3 data-t="yourBiz"></h3><div id="bizList"></div></div>
+    </div>
+  </section></div>
+</main>
+</div>
+<footer><span data-t="footer"></span> · <a href="/console" data-t="analyst"></a></footer>
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== proof flower owner dashboard =====
+// This page only DISPLAYS results and sends button clicks. All checking and scoring happens in the Python backend.
+
+// Page state: chosen business, language, first check (A) and latest check (B), tickets, plan, questions, facts, tabs.
+let BIZ='casa_coqui', BIZLIST=[], LANG='en', A=null, B=null, REPORT=null, RECS=[], QS=[], FACTS=[], RUNS=[],
+    TAB='todo', QTAB='all', SHOWALL=false, CSVTEXT='', RUNNING=false;
+try{ BIZ=localStorage.getItem('pf_biz')||BIZ; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// All the words on the page, in English (en) and Spanish (es). Edit wording here, not in the functions.
+const T={
+en:{navOverview:'Overview',navIssues:'Issues',navPlan:'Growth plan',navQuestions:'Questions',navPromise:'Our promise',navSetup:'+ Add a business',nameLbl:'Business name (only needed if your file is a plain product list)',
+ demo:'Demo business · sample data',sample:'Sample data',live:'Live data',outOf:'out of 100',
+ hello:n=>`Hi, ${n}`,sub:(loc,a,b)=>[loc,b&&`Latest check: ${b}`,a&&`compared with ${a}`].filter(Boolean).join(' · '),
+ healthTitle:'Your AI health score',grades:['Seedling · needs care','Growing','Blooming'],
+ summary:(m,n,m0,p,ip)=>`AI assistants mention you in ${m} of ${n} local searches${m0!=null?` (it was ${m0})`:''}. ${p?`${p} issue${p>1?'s need':' needs'} your OK`:'Nothing needs your OK right now'}${ip?`, and ${ip} fix${ip>1?'es are':' is'} being re-checked.`:'.'}`,
+ noChecks:'No checks yet. Run your first check below to get your score.',
+ delta:d=>d>=0?`▲ ${d} points since your first check`:`▼ ${Math.abs(d)} points since your first check`,first:'This is your first check',
+ q1:'Do customers find you?',q2:'Does AI get your facts right?',q3:'Does AI make things up about you?',
+ s1:(m,n)=>`${m} <small>of ${n} searches</small>`,s2:(c,t)=>`${c} <small>of ${t} facts right</small>`,s3:(h,n)=>`${h} <small>of ${n} trick questions</small>`,
+ was:v=>`Was ${v} at your first check`,
+ runTitle:'Run a check',runLeadDemo:'Watch the check run question by question. Every wrong answer is flagged and turned into a ticket on the spot.',
+ runLeadLive:n=>`Asks Gemini (with Google Search) all ${n} of your questions, like a real customer, and checks every answer against your approved facts. Takes 1 to 3 minutes.`,
+ runDemo1:'Run the Week 1 check (demo)',runDemo2:'Run the Week 3 re-check (demo)',runReplay:'Replay the demo from Week 1',runLive:'Run a live check with Gemini',
+ runDemo2Hint:'Tip: approve the Week 1 issues first. The re-check then confirms which fixes actually worked.',
+ asking:(i,n)=>`Asked ${i} of ${n} questions…`,
+ fCreated:(id,sev,h)=>`⚑ Flagged: ${h} → Ticket #${id} created (${sev})`,fRepeat:(id,h)=>`↻ Same problem again: ${h} → added to Ticket #${id}`,fFixed:(id,h)=>`✓ Fixed: ${h} → Ticket #${id} confirmed`,
+ done:(n,c,f)=>`Check complete. ${c} new issue${c===1?'':'s'} flagged and turned into ticket${c===1?'':'s'}${f?`, ${f} fix${f===1?'':'es'} confirmed`:''}. Scores updated.`,
+ review:'Review issues',couldnt:'Could not check',
+ ovTitle:'Needs your OK',ovLead:'The most important things to review.',ovAll:'See all issues',ovPlan:'See your growth plan',
+ attnTitle:'Issues',attnLead:'Every time an AI assistant tells customers something that contradicts your approved facts, we open a ticket. Most serious first. Nothing changes until you approve.',
+ tabs:{todo:'Needs your OK',progress:'Being re-checked',done:'Closed'},
+ says:'What AI tells customers',saidBefore:'What AI used to say',truth:'The truth',caught:'Caught by',source:'Likely source',noSource:'not shown by the AI',
+ approve:'Approve fix',reject:'Not an issue',look:'Look into it',
+ status:{pending:'Waiting for your OK',approved:"Fix approved · waiting for the next check to confirm",verified:'Fixed · AI now gets this right',rejected:'Dismissed',investigating:"We're looking into it"},
+ sev:{critical:'Critical',high:'High',medium:'Medium',low:'Low'},emptyTab:'Nothing here right now.',
+ planTitle:'Your growth plan',planLead:'Simple steps to show up more often in AI answers, in the order we recommend. We can write most of it for you.',
+ when:{high:'Do this first',medium:'Next',low:'When you have time'},why:'Why',what:'What to do',time:'Time',help:'How it helps',
+ draftBtn:'Write it for me',drafting:'Writing a draft from your approved facts…',draftNote:(src)=>`Draft only${src==='gemini'?' · written by AI from your approved facts':' · built from your approved facts'}. Nothing is published until you approve it.`,
+ more:n=>`Show all ${n} steps`,fewer:'Show fewer steps',
+ checkTitle:'Check any business website',checkBtn:'Check website',checking:'Checking…',checkNote:site=>`The plan above now reflects ${site}.`,
+ qTitle:'Questions we ask AI',qLead:'Every check asks AI assistants these exact questions, the same way a customer would. The list stays the same, so a change in your score is real progress, not different questions.',
+ qAll:'All',qTypes:{visibility:'Local searches',accuracy:'About your business',stress:'Trick questions'},
+ qTypeHelp:{visibility:'Your name is never in the question. We check if AI brings you up on its own.',accuracy:'We check the answer against the facts you approved.',stress:'Designed to tempt AI into making things up. A good AI admits when it doesn’t know.'},
+ checkLbl:'What we check',latestLbl:'Latest result',seeLatest:'See the AI’s latest answer',notAsked:'Not asked yet',
+ chkVis:'Whether AI mentions you, and how high it recommends you.',chkStress:'Whether AI invents an answer instead of admitting it isn’t sure.',chkFact:(l,v)=>`Your approved fact: ${l} = ${v}`,
+ lbl:{price:(p,c)=>`Price of ${p}${c?` (${c})`:''}`,hours:'Hours',address:'Address',open:'Open or closed',avail:p=>`${p} availability`,delivery:'Delivery',reservations:'Reservations','catering minimum':'Catering minimum'},
+ res:{TOP:'Recommended first',LISTED:'Mentioned',ABSENT:'Not mentioned',CORRECT:'Correct',WRONG:'Wrong information',NOCLAIM:'No checkable fact in the answer',SAFE:'Answered safely',HALLUCINATED:'Made something up',ERROR:'Could not check'},
+ before:v=>`First check: ${v}`,ticketChip:id=>`Ticket #${id}`,
+ promTitle:'Our promise',promLead:'AI does the busywork. People make the decisions.',
+ p1h:'We do automatically',p1:['Ask AI assistants your customers’ questions every week','Check every answer against your approved facts','Flag problems and open a ticket, ranked by how serious it is','Write draft fixes for you to review'],
+ p2h:'We always ask you first',p2:['Changing anything on your website or listings','Anything about prices, policies or legal terms','Contacting another website','Publishing any content we wrote'],
+ p3h:'We never',p3:['Write fake or paid reviews','Use tricks or hidden text to fool AI','Say anything bad about competitors','Call a fix successful until a new check proves it'],
+ accountable:'You own your business facts and approve every public change. proof flower owns the checks: a person reviews flagged issues and spot-checks our own results every week, and every decision is logged.',
+ howTitle:'How your score works',
+ formula:`<p><b>AI health score</b> = 40% facts right + 35% showing up + 25% not making things up.</p><p><b>Showing up</b> gives more credit for being recommended first than for being listed lower.</p><p><b>Facts right</b> weighs mistakes by how much they hurt you: a wrong price, policy or hours counts more than a small detail. If we can’t verify something, it never counts against you.</p><p><b>Making things up</b> uses trick questions. Saying “I’m not sure” is the safe answer.</p><p>Behind the scenes: AI turns answers into facts, and plain code (not AI) decides what’s right by comparing with the facts you approved.</p>`,
+ testBtn:'Test our own checker (demo answers)',testing:'Testing our checker on answers we labeled by hand…',
+ testResult:(p,r,e,n)=>`Our checker found ${r}% of the facts it should have, and ${p}% of what it found was right (${e}% of answers matched perfectly), across ${n} hand-labeled answers.`,
+ setupTitle:'Add a business',setupLead:'Upload a spreadsheet of a business’s facts. We build its question list and you can run a live check with Gemini right away.',
+ st1:'Get the spreadsheet template',st1d:'One row per fact: prices, hours, address, whether it’s open, and policies (delivery, reservations, catering). Only rows marked approved = yes are used to check AI. Real facts need the official https page where you saw them and the date you checked. You can also upload a plain product list (name, price, stock): each product becomes a price fact and an in-stock fact.',
+ dlTemplate:'Download template (CSV)',st2:'Upload your filled-in spreadsheet',pickFile:'Click to choose a .csv file',
+ st3:'Tell us where the business is',locLbl:'City and state',catLbl:'Type of business',webLbl:'Website (optional, we’ll check its AI-readiness)',
+ setupBtn:'Set up business',settingUp:'Importing facts and writing questions…',
+ setupDone:(n,f,q,src)=>`${n} is ready: ${f} approved facts and ${q} questions (${src==='gemini'?'local and trick questions written by Gemini':'written from templates'}).`,
+ goRun:'Go to overview and run a live check',needFile:'Choose a CSV file first.',
+ yourBiz:'Your businesses',remove:'Remove',demoTag:'demo',removed:'Removed.',
+ footer:'proof flower · Montclair State University · HSI Battle of the Brains 2026 · Demo data is always labeled.',analyst:'Technical view',
+ logged:'Saved. Your decision is logged.',
+ hl:{closed:'AI says you’re permanently closed',price:(p,c)=>`Wrong price for ${p}${c?` (${c})`:''}`,hours:'Wrong opening hours',address:'Wrong address',delivery:'Wrong delivery information',reservations:'Wrong reservation information','catering minimum':'Wrong catering minimum',policy:'Wrong policy information',avail:p=>`Wrong availability for ${p}`,invented:'AI made something up about you'},
+ val:{available:'Available now',notInFacts:'Not in your approved facts',unavailable:'Not available right now',closed:'Permanently closed',open:'Open for business'},
+ ctx:{lunch:'lunch',dinner:'dinner',each:'each'}},
+es:{navOverview:'Resumen',navIssues:'Problemas',navPlan:'Plan de crecimiento',navQuestions:'Preguntas',navPromise:'Nuestra promesa',navSetup:'+ Agregar un negocio',nameLbl:'Nombre del negocio (solo si tu archivo es una lista de productos)',
+ demo:'Negocio de demostración · datos de ejemplo',sample:'Datos de ejemplo',live:'Datos reales',outOf:'de 100',
+ hello:n=>`Hola, ${n}`,sub:(loc,a,b)=>[loc,b&&`Última revisión: ${b}`,a&&`comparada con ${a}`].filter(Boolean).join(' · '),
+ healthTitle:'Tu puntuación de salud en IA',grades:['Semilla · necesita cuidado','Creciendo','Floreciendo'],
+ summary:(m,n,m0,p,ip)=>`Los asistentes de IA te mencionan en ${m} de ${n} búsquedas locales${m0!=null?` (antes: ${m0})`:''}. ${p?`${p} ${p>1?'problemas necesitan':'problema necesita'} tu aprobación`:'Nada necesita tu aprobación ahora'}${ip?`, y ${ip} ${ip>1?'arreglos se están':'arreglo se está'} volviendo a revisar.`:'.'}`,
+ noChecks:'Todavía no hay revisiones. Haz tu primera revisión abajo para obtener tu puntuación.',
+ delta:d=>d>=0?`▲ ${d} puntos desde tu primera revisión`:`▼ ${Math.abs(d)} puntos desde tu primera revisión`,first:'Esta es tu primera revisión',
+ q1:'¿Te encuentran los clientes?',q2:'¿La IA tiene tus datos correctos?',q3:'¿La IA inventa cosas sobre ti?',
+ s1:(m,n)=>`${m} <small>de ${n} búsquedas</small>`,s2:(c,t)=>`${c} <small>de ${t} datos correctos</small>`,s3:(h,n)=>`${h} <small>de ${n} preguntas trampa</small>`,
+ was:v=>`Antes: ${v} en tu primera revisión`,
+ runTitle:'Hacer una revisión',runLeadDemo:'Mira la revisión pregunta por pregunta. Cada respuesta incorrecta se señala y se convierte en un ticket al momento.',
+ runLeadLive:n=>`Le hace a Gemini (con Google Search) tus ${n} preguntas, como un cliente real, y compara cada respuesta con tus datos aprobados. Toma de 1 a 3 minutos.`,
+ runDemo1:'Hacer la revisión de la Semana 1 (demo)',runDemo2:'Hacer la nueva revisión de la Semana 3 (demo)',runReplay:'Repetir la demo desde la Semana 1',runLive:'Revisión en vivo con Gemini',
+ runDemo2Hint:'Consejo: aprueba primero los problemas de la Semana 1. La nueva revisión confirma qué arreglos funcionaron.',
+ asking:(i,n)=>`${i} de ${n} preguntas hechas…`,
+ fCreated:(id,sev,h)=>`⚑ Señalado: ${h} → Ticket #${id} creado (${sev})`,fRepeat:(id,h)=>`↻ Mismo problema otra vez: ${h} → agregado al Ticket #${id}`,fFixed:(id,h)=>`✓ Resuelto: ${h} → Ticket #${id} confirmado`,
+ done:(n,c,f)=>`Revisión terminada. ${c} ${c===1?'problema nuevo señalado y convertido en ticket':'problemas nuevos señalados y convertidos en tickets'}${f?`, ${f} ${f===1?'arreglo confirmado':'arreglos confirmados'}`:''}. Puntuaciones actualizadas.`,
+ review:'Revisar problemas',couldnt:'No se pudo revisar',
+ ovTitle:'Necesita tu aprobación',ovLead:'Lo más importante para revisar.',ovAll:'Ver todos los problemas',ovPlan:'Ver tu plan de crecimiento',
+ attnTitle:'Problemas',attnLead:'Cada vez que un asistente de IA les dice a tus clientes algo que contradice tus datos aprobados, abrimos un ticket. Lo más grave primero. Nada cambia sin tu aprobación.',
+ tabs:{todo:'Necesita tu aprobación',progress:'En nueva revisión',done:'Cerrados'},
+ says:'Lo que la IA les dice a tus clientes',saidBefore:'Lo que la IA decía antes',truth:'La verdad',caught:'Detectado por',source:'Fuente probable',noSource:'la IA no la mostró',
+ approve:'Aprobar arreglo',reject:'No es un problema',look:'Investigar',
+ status:{pending:'Esperando tu aprobación',approved:'Arreglo aprobado · esperando la próxima revisión para confirmarlo',verified:'Resuelto · la IA ya lo dice bien',rejected:'Descartado',investigating:'Lo estamos investigando'},
+ sev:{critical:'Crítico',high:'Alto',medium:'Medio',low:'Bajo'},emptyTab:'No hay nada aquí por ahora.',
+ planTitle:'Tu plan de crecimiento',planLead:'Pasos sencillos para aparecer más en las respuestas de IA, en el orden que recomendamos. Podemos escribir casi todo por ti.',
+ when:{high:'Haz esto primero',medium:'Después',low:'Cuando tengas tiempo'},why:'Por qué',what:'Qué hacer',time:'Tiempo',help:'Cómo ayuda',
+ draftBtn:'Escríbelo por mí',drafting:'Escribiendo un borrador con tus datos aprobados…',draftNote:(src)=>`Solo es un borrador${src==='gemini'?' · escrito por IA con tus datos aprobados':' · hecho con tus datos aprobados'}. Nada se publica sin tu aprobación.`,
+ more:n=>`Ver los ${n} pasos`,fewer:'Ver menos pasos',
+ checkTitle:'Revisa el sitio web de cualquier negocio',checkBtn:'Revisar sitio',checking:'Revisando…',checkNote:site=>`El plan ahora refleja ${site}.`,
+ qTitle:'Las preguntas que le hacemos a la IA',qLead:'Cada revisión les hace estas mismas preguntas a los asistentes de IA, como lo haría un cliente. La lista no cambia, así que un cambio en tu puntuación es progreso real.',
+ qAll:'Todas',qTypes:{visibility:'Búsquedas locales',accuracy:'Sobre tu negocio',stress:'Preguntas trampa'},
+ qTypeHelp:{visibility:'Tu nombre nunca está en la pregunta. Revisamos si la IA te menciona por su cuenta.',accuracy:'Comparamos la respuesta con los datos que aprobaste.',stress:'Diseñadas para tentar a la IA a inventar. Una buena IA admite cuando no sabe.'},
+ checkLbl:'Qué revisamos',latestLbl:'Último resultado',seeLatest:'Ver la última respuesta de la IA',notAsked:'Todavía no se ha preguntado',
+ chkVis:'Si la IA te menciona y en qué lugar te recomienda.',chkStress:'Si la IA inventa una respuesta en lugar de admitir que no está segura.',chkFact:(l,v)=>`Tu dato aprobado: ${l} = ${v}`,
+ lbl:{price:(p,c)=>`Precio de ${p}${c?` (${c})`:''}`,hours:'Horario',address:'Dirección',open:'Abierto o cerrado',avail:p=>`Disponibilidad de ${p}`,delivery:'Entregas',reservations:'Reservaciones','catering minimum':'Mínimo de catering'},
+ res:{TOP:'Recomendado primero',LISTED:'Mencionado',ABSENT:'No mencionado',CORRECT:'Correcto',WRONG:'Información incorrecta',NOCLAIM:'Sin datos verificables en la respuesta',SAFE:'Respondió con cuidado',HALLUCINATED:'Inventó algo',ERROR:'No se pudo revisar'},
+ before:v=>`Primera revisión: ${v}`,ticketChip:id=>`Ticket #${id}`,
+ promTitle:'Nuestra promesa',promLead:'La IA hace el trabajo pesado. Las personas toman las decisiones.',
+ p1h:'Lo hacemos automáticamente',p1:['Hacerles a los asistentes de IA las preguntas de tus clientes cada semana','Comparar cada respuesta con tus datos aprobados','Señalar problemas y abrir un ticket, ordenado por gravedad','Escribir borradores de arreglos para que los revises'],
+ p2h:'Siempre te preguntamos primero',p2:['Cambiar algo en tu sitio web o listados','Cualquier cosa sobre precios, políticas o términos legales','Contactar a otro sitio web','Publicar contenido que escribimos'],
+ p3h:'Nunca',p3:['Escribir reseñas falsas o pagadas','Usar trucos o texto oculto para engañar a la IA','Hablar mal de la competencia','Decir que un arreglo funcionó sin que una nueva revisión lo compruebe'],
+ accountable:'Tú eres dueño de los datos de tu negocio y apruebas cada cambio público. proof flower es responsable de las revisiones: una persona revisa los problemas señalados y verifica nuestros propios resultados cada semana, y cada decisión queda registrada.',
+ howTitle:'Cómo funciona tu puntuación',
+ formula:`<p><b>Puntuación de salud en IA</b> = 40% datos correctos + 35% aparecer + 25% no inventar.</p><p><b>Aparecer</b> da más crédito por ser recomendado primero.</p><p><b>Datos correctos</b> pesa los errores según cuánto te afectan. Si no podemos verificar algo, nunca cuenta en tu contra.</p><p><b>Inventar</b> se mide con preguntas trampa. Decir “no estoy seguro” es la respuesta segura.</p><p>Detrás de escena: la IA convierte respuestas en datos, y código simple (no IA) decide qué es correcto.</p>`,
+ testBtn:'Probar nuestro verificador (respuestas de demo)',testing:'Probando nuestro verificador con respuestas etiquetadas a mano…',
+ testResult:(p,r,e,n)=>`Nuestro verificador encontró el ${r}% de los datos que debía, y el ${p}% de lo que encontró era correcto (${e}% coincidieron perfectamente), en ${n} respuestas etiquetadas a mano.`,
+ setupTitle:'Agregar un negocio',setupLead:'Sube una hoja de cálculo con los datos del negocio. Creamos su lista de preguntas y puedes hacer una revisión en vivo con Gemini enseguida.',
+ st1:'Descarga la plantilla',st1d:'Una fila por dato: precios, horario, dirección, si está abierto y políticas (entregas, reservaciones, catering). Solo se usan las filas con approved = yes. Los datos reales necesitan la página oficial https y la fecha en que los revisaste. También puedes subir una lista simple de productos (nombre, precio, inventario).',
+ dlTemplate:'Descargar plantilla (CSV)',st2:'Sube tu hoja de cálculo completa',pickFile:'Haz clic para elegir un archivo .csv',
+ st3:'Dinos dónde está el negocio',locLbl:'Ciudad y estado',catLbl:'Tipo de negocio',webLbl:'Sitio web (opcional, revisamos si está listo para la IA)',
+ setupBtn:'Configurar negocio',settingUp:'Importando datos y escribiendo preguntas…',
+ setupDone:(n,f,q,src)=>`${n} está listo: ${f} datos aprobados y ${q} preguntas (${src==='gemini'?'búsquedas locales y preguntas trampa escritas por Gemini':'escritas con plantillas'}).`,
+ goRun:'Ir al resumen y hacer una revisión en vivo',needFile:'Primero elige un archivo CSV.',
+ yourBiz:'Tus negocios',remove:'Eliminar',demoTag:'demo',removed:'Eliminado.',
+ footer:'proof flower · Montclair State University · HSI Battle of the Brains 2026 · Los datos de demostración siempre están señalados.',analyst:'Vista técnica',
+ logged:'Guardado. Tu decisión quedó registrada.',
+ hl:{closed:'La IA dice que cerraste permanentemente',price:(p,c)=>`Precio incorrecto de ${p}${c?` (${c})`:''}`,hours:'Horario incorrecto',address:'Dirección incorrecta',delivery:'Información de entrega incorrecta',reservations:'Información de reservaciones incorrecta','catering minimum':'Mínimo de catering incorrecto',policy:'Política incorrecta',avail:p=>`Disponibilidad incorrecta de ${p}`,invented:'La IA inventó algo sobre ti'},
+ val:{available:'Disponible ahora',notInFacts:'No está en tus datos aprobados',unavailable:'No disponible por ahora',closed:'Cerrado permanentemente',open:'Abierto'},
+ ctx:{lunch:'almuerzo',dinner:'cena',each:'cada uno'}}
+};
+// Spanish versions of the growth-plan steps, keyed by step ID: [title, why, what to do, time, how it helps].
+const RECS_ES={
+ 'GEO-CRAWL':['Deja que los asistentes de IA lean tu sitio web','Tu sitio bloquea a algunos asistentes de IA, así que usan listados externos que pueden estar desactualizados.','Cambia un ajuste en tu sitio para permitir la entrada a los asistentes de búsqueda con IA (archivo robots.txt). Preparamos el cambio exacto.','15 minutos','La IA puede citar tu propio sitio en lugar de páginas viejas.'],
+ 'GEO-SCHEMA':['Dale a la IA una “tarjeta de presentación digital”','A tu sitio le falta la información estándar del negocio (horario, dirección, menú, precios) que la IA lee con más confianza.','La generamos con tus datos aprobados. Tu encargado web la pega en el sitio una vez (datos estructurados schema.org).','Cerca de 1 hora','La IA obtiene tus datos directamente de ti.'],
+ 'GEO-MENU':['Pon tu menú en tu sitio como texto, no en PDF','Tus precios solo están en un PDF o imagen. La IA muchas veces no puede leerlos.','Agrega una página de menú con los nombres y precios escritos.','2 a 3 horas','Menos precios incorrectos en las respuestas de IA.'],
+ 'GEO-FAQ':['Agrega una página corta de preguntas frecuentes','No hay una página que responda lo que los clientes le preguntan a la IA.','Publica respuestas cortas y directas. Ya escribimos un borrador con tus datos aprobados.','Cerca de 1 hora','A los asistentes de IA les encanta citar respuestas claras.'],
+ 'ACC-LISTING-HOURS':['Tu horario está incorrecto en otro sitio','Tu sitio web y otros listados muestran horarios diferentes. La IA repite la versión incorrecta.','Actualiza tu horario en esos listados para que coincida con tu sitio web.','30 minutos','Elimina la fuente más probable de esta respuesta incorrecta.'],
+ 'ACC-LISTING-DELIVERY':['Tu información de entrega está incorrecta en otro sitio','Tu sitio y otros listados no coinciden sobre las entregas. La IA repite la versión incorrecta.','Actualiza la información de entrega en esos listados para que coincida con tu sitio web.','30 minutos','Elimina la fuente más probable de esta respuesta incorrecta.'],
+ 'GEO-GBP':['Completa tu perfil de negocio en Google','A tu perfil de Google le faltan detalles como categorías, enlace al menú y servicios.','Agrega tu categoría, enlace al menú, servicios y algunas fotos.','45 minutos','Gemini y las respuestas basadas en Google dependen mucho de este perfil.'],
+ 'GEO-REVIEWS':['Consigue más reseñas honestas de clientes','Tienes pocas reseñas en línea.','Pide reseñas a clientes contentos. Nunca compres ni inventes reseñas.','Continuo','Más menciones reales hacen que la IA te recomiende más.'],
+ 'GEO-META':['Agrega una descripción de una oración a tu página principal','Tu página principal no tiene un resumen corto de quién eres.','Una oración: qué eres, dónde estás y por qué eres conocido.','10 minutos','Ayuda a la IA a describirte correctamente.'],
+ 'GEO-LLMS':['Opcional: agrega un archivo de resumen para IA','Algunas herramientas de IA buscan un archivo de resumen (llms.txt). Es nuevo y no está garantizado.','Podemos generar uno que apunte a tu menú, horario y preguntas frecuentes.','15 minutos','Bajo costo, posible beneficio.']
+};
+const t=k=>T[LANG][k];
+// Sort order for issues: Critical first, then High, Medium, Low.
+const SEVRANK={critical:0,high:1,medium:2,low:3};
+const ICON={TOP:['ok','✓'],LISTED:['ok','✓'],CORRECT:['ok','✓'],SAFE:['ok','✓'],ABSENT:['no','✕'],WRONG:['no','!'],HALLUCINATED:['no','!'],'NO CLAIM':['meh','?'],ERROR:['meh','?']};
+const rk=o=>o==='NO CLAIM'?'NOCLAIM':o;
+
+// This switches the whole page between English and Spanish.
+function setLang(l){LANG=l;document.documentElement.lang=l;$('bEN').classList.toggle('on',l==='en');$('bES').classList.toggle('on',l==='es');render();}
+// This shows a short pop-up message at the bottom of the screen.
+function toast(m){const x=$('toast');x.textContent=m;x.style.display='block';clearTimeout(x._h);x._h=setTimeout(()=>x.style.display='none',3200)}
+// This calls our backend (app.py) and returns the JSON, or throws a readable error.
+async function api(path,opt={}){const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opt});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.detail||('Error '+r.status));return d;}
+// This shortens a link to just the website name.
+const host=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch(e){return u}};
+// This capitalizes a value and fixes brand names like DoorDash and OpenTable.
+const cap=s=>String(s||'').replace(/\b(doordash|opentable)\b/gi,m=>({doordash:'DoorDash',opentable:'OpenTable'})[m.toLowerCase()]).replace(/^./,c=>c.toUpperCase());
+// This turns stored hours like "tue-sun 11:00-21:00" into friendly text like "Tue–Sun 11 AM–9 PM".
+function hours(v){return String(v).replace(/\b(\d{1,2}):(\d{2})\b/g,(m,h,mm)=>{h=+h;const ap=h>=12?'PM':'AM';const hh=h%12||12;return mm==='00'?`${hh} ${ap}`:`${hh}:${mm} ${ap}`})
+  .replace(/\bdaily\b/i,LANG==='es'?'Todos los días':'Every day').replace(/tue-sun/i,LANG==='es'?'Mar–Dom':'Tue–Sun').replace(/closed monday/i,LANG==='es'?'cerrado los lunes':'closed Monday');}
+
+// This switches to another business and reloads everything for it.
+function switchBiz(id){BIZ=id;try{localStorage.setItem('pf_biz',id)}catch(e){};TAB='todo';QTAB='all';load();}
+
+// This loads everything for the chosen business: its checks (first and latest), tickets, questions,
+// approved facts and growth plan. Then it draws the page.
+async function load(){
+  BIZLIST=(await api('/api/businesses')).businesses;
+  if(!BIZLIST.some(b=>b.business_id===BIZ)) BIZ=BIZLIST[0]?BIZLIST[0].business_id:'casa_coqui';
+  $('bizSel').innerHTML=BIZLIST.map(b=>`<option value="${esc(b.business_id)}" ${b.business_id===BIZ?'selected':''}>${esc(b.business_name)}${b.demo?' (demo)':''}</option>`).join('');
+  RUNS=(await api('/api/evals?business_id='+BIZ)).runs;
+  if(!RUNS.length){A=B=null;}
+  else{const last=RUNS[RUNS.length-1], same=RUNS.filter(r=>r.synthetic===last.synthetic);
+    B=await api('/api/evals/'+last.id); A=same[0].id!==last.id?await api('/api/evals/'+same[0].id):null;}
+  REPORT=await api('/api/report/'+BIZ);
+  const [qs,fs]=await Promise.all([api('/api/questions'),api('/api/facts')]);
+  QS=qs.filter(q=>q.business_id===BIZ&&q.origin==='evalset'); FACTS=fs.facts.filter(f=>f.business_id===BIZ&&f.approved);
+  const g=await api('/api/geo/recommendations',{method:'POST',body:JSON.stringify({business_id:BIZ,eval_id:(A||B||{}).id||0})});
+  RECS=g.recommendations; window.BUSINESS=g.business;
+  render();
+}
+
+// This redraws every part of the page with the current data and language.
+function render(){
+  document.querySelectorAll('[data-t]').forEach(el=>{const v=t(el.dataset.t);if(typeof v==='string')el.innerHTML=v;});
+  document.querySelectorAll('[data-list]').forEach(el=>{el.innerHTML=t(el.dataset.list).map(x=>`<li>${esc(x)}</li>`).join('')});
+  $('formula').innerHTML=t('formula');
+  if(CSVTEXT) $('fileName').textContent=window._fname||'';
+  if(!REPORT) return;
+  const biz=window.BUSINESS||{}, meta=BIZLIST.find(b=>b.business_id===BIZ)||{};
+  $('hello').textContent=t('hello')(biz.business_name||BIZ);
+  const chip=meta.demo?t('demo'):(meta.sample_data?t('sample'):t('live'));
+  $('dataChip').textContent=chip; $('dataChip').classList.toggle('live',!meta.demo&&!meta.sample_data);
+  $('sub').textContent=t('sub')(biz.location||'',A&&A.label,B&&B.label);
+  renderHealth(); renderRunPanel(); renderIssues(); renderOverview(); renderPlan(); renderQuestions(); renderBizList(); renderCounts();
+}
+
+// This fills the health score card and the three question cards (or an empty state before the first check).
+function renderHealth(){
+  if(!B){$('score').textContent='–';$('arc').setAttribute('stroke-dasharray','0 999');$('grade').textContent='';$('grade').style.display='none';$('summary').textContent=t('noChecks');$('delta').style.display='none';
+    ['s1','s2','s3'].forEach(i=>$(i).textContent='–');['w1','w2','w3'].forEach(i=>$(i).textContent='');['m1','m2','m3'].forEach(i=>$(i).style.width='0');return;}
+  const s=B.scores, s0=A&&A.scores, score=Math.round(s.trust??0);
+  $('score').textContent=score; $('arc').setAttribute('stroke-dasharray',`${(score/100)*2*Math.PI*94} 999`);
+  $('grade').style.display='';$('grade').textContent=t('grades')[score<40?0:score<70?1:2];
+  const ts=REPORT.tickets, pend=ts.filter(x=>['pending','investigating'].includes(x.status)).length, prog=ts.filter(x=>x.status==='approved').length;
+  $('summary').textContent=t('summary')(s.visibility.mentioned,s.visibility.questions,s0?s0.visibility.mentioned:null,pend,prog);
+  $('delta').style.display=''; $('delta').textContent=s0?t('delta')(Math.round(s.trust-s0.trust)):t('first');
+  const tot=s.accuracy.correct+s.accuracy.incorrect, tot0=s0?s0.accuracy.correct+s0.accuracy.incorrect:0;
+  $('s1').innerHTML=t('s1')(s.visibility.mentioned,s.visibility.questions); $('s2').innerHTML=t('s2')(s.accuracy.correct,tot); $('s3').innerHTML=t('s3')(s.hallucination.hallucinated,s.hallucination.questions);
+  $('w1').textContent=s0?t('was')(`${s0.visibility.mentioned}/${s0.visibility.questions}`):''; $('w2').textContent=s0?t('was')(`${s0.accuracy.correct}/${tot0}`):''; $('w3').textContent=s0?t('was')(`${s0.hallucination.hallucinated}/${s0.hallucination.questions}`):'';
+  $('m1').style.width=(s.visibility.inclusion_rate||0)+'%'; $('m2').style.width=(s.accuracy.score||0)+'%'; $('m3').style.width=(s.hallucination.rate||0)+'%';
+}
+
+// This decides which check the Run button starts: for the demo business it walks Week 1 → Week 3 → replay;
+// for a business added from a CSV it runs a live Gemini check.
+function nextRun(){
+  const meta=BIZLIST.find(b=>b.business_id===BIZ)||{};
+  if(!meta.demo) return {mode:'live_gemini',label:t('runLive'),reset:false};
+  const last=RUNS[RUNS.length-1];
+  if(!last) return {mode:'mock_baseline',label:t('runDemo1'),reset:false};
+  if(last.mode==='mock_baseline') return {mode:'mock_after',label:t('runDemo2'),reset:false,hint:t('runDemo2Hint')};
+  return {mode:'mock_baseline',label:t('runReplay'),reset:true};
+}
+// This draws the "Run a check" card (button, progress bar and the live feed area).
+function renderRunPanel(){
+  if(RUNNING) return;
+  const n=nextRun(), meta=BIZLIST.find(b=>b.business_id===BIZ)||{};
+  $('runPanel').innerHTML=`<h3>${t('runTitle')}</h3><p class="small">${meta.demo?t('runLeadDemo'):t('runLeadLive')(QS.length)}</p>
+    ${n.hint?`<p class="small"><b>${n.hint}</b></p>`:''}
+    <div class="actions"><button class="btn" id="runBtn" onclick="startRun()">${n.label}</button></div>
+    <div class="progress" id="prog"><i id="progBar"></i></div><p class="small" id="progTxt"></p>
+    <div class="feed" id="feed"></div><div class="summary" id="runSum"></div>`;
+}
+// This runs a check one question at a time and shows each result live, including every ticket it
+// creates ("Flagged"), adds to ("Same problem again") or confirms fixed.
+async function startRun(){
+  const n=nextRun(); RUNNING=true; $('runBtn').disabled=true;
+  try{
+    if(n.reset) await api('/api/evals/reset/'+BIZ,{method:'POST'});
+    const st=await api('/api/evals/start',{method:'POST',body:JSON.stringify({business_id:BIZ,mode:n.mode})});
+    $('prog').style.display='block'; let created=0, fixed=0;
+    for(let i=0;i<st.total;i++){
+      const s=await api(`/api/evals/${st.id}/step`,{method:'POST'});
+      $('progBar').style.width=(100*s.index/s.total)+'%'; $('progTxt').textContent=t('asking')(s.index,s.total);
+      const r=s.result, [c,g]=ICON[r.outcome]||['meh','?'];
+      const flags=s.tickets.map(tk=>{const h=headline(tk), sv=t('sev')[tk.priority]||tk.priority;
+        if(tk.event==='created'){created++;return `<div class="flag created">${esc(t('fCreated')(tk.id,sv,h))}</div>`;}
+        if(tk.event==='fixed'){fixed++;return `<div class="flag fixed">${esc(t('fFixed')(tk.id,h))}</div>`;}
+        return `<div class="flag repeat">${esc(t('fRepeat')(tk.id,h))}</div>`;}).join('');
+      const row=document.createElement('div'); row.className='frow';
+      row.innerHTML=`<div class="top"><span class="icon ${c}">${g}</span><div><div class="qt">${esc(r.question)}</div>
+        <div class="rs">${r.error?esc(t('couldnt')+': '+r.error):(t('res')[rk(r.outcome)]||r.outcome)}</div></div></div>${flags}`;
+      $('feed').prepend(row);
+      if(s.done){ $('runSum').style.display='block';
+        $('runSum').innerHTML=`${esc(t('done')(s.total,created,fixed))} <button class="btn soft small" style="margin-left:8px" onclick="showView('issues')">${t('review')}</button>`; }
+    }
+    const keep=$('runPanel').innerHTML; RUNNING=false; await load(); $('runPanel').innerHTML=keep;
+    const b=$('runBtn'); if(b){b.disabled=false; const nn=nextRun(); b.textContent=nn.label;}
+  }catch(e){ RUNNING=false; toast(e.message); renderRunPanel(); }
+}
+
+// This writes the plain-English title of an issue, e.g. "Wrong price for Mofongo (lunch)".
+function headline(x){
+  const H=t('hl'), ctx=x.context?(t('ctx')[x.context]||x.context):'';
+  if(x.product_id==='business'&&x.field==='availability') return H.closed;
+  if(x.field==='price_usd') return H.price(x.product_name,ctx);
+  if(x.field==='hours') return H.hours; if(x.field==='address') return H.address;
+  if(x.field==='policy') return H[x.context]||H.policy;
+  if(x.field==='availability') return H.avail(x.product_name);
+  if(x.field==='invented') return H.invented;
+  return x.title;
+}
+// This formats a stored value for people, e.g. 14 becomes "$14.00" and "unavailable" (for the business) becomes "Permanently closed".
+function val(x,v){
+  const V=t('val');
+  if(x.field==='invented') return v===x.verified_value?V.notInFacts:v;
+  if(x.product_id==='business'&&x.field==='availability') return v==='unavailable'?V.closed:V.open;
+  if(x.field==='availability') return V[v]||v;
+  if(x.field==='price_usd') return isNaN(+v)?v:'$'+(+v).toFixed(2);
+  if(x.field==='hours') return cap(hours(v));
+  return cap(v);
+}
+// This builds one ticket card with only what an owner needs: number, severity, status, what AI says vs the truth,
+// which question caught it, the likely source, and the decision buttons.
+function issueCard(x){
+  const src=(x.evidence_citations||[])[0], open=['pending','investigating'].includes(x.status);
+  return `<div class="issue ${x.priority}" id="tk${x.id}"><div class="stripe"></div><div class="body">
+    <div class="row"><span class="tid">#${x.id}</span><span class="sev ${x.priority}">${t('sev')[x.priority]||x.priority}</span><span class="status">${t('status')[x.status]||x.status}</span></div>
+    <h3>${esc(headline(x))}</h3>
+    <div class="compare"><div class="says"><small>${x.status==='verified'?t('saidBefore'):t('says')}</small><b>${esc(val(x,x.ai_value))}</b></div>
+    <div class="truth"><small>${t('truth')}</small><b>${esc(val(x,x.verified_value))}</b></div></div>
+    <p class="meta"><b>${t('caught')}:</b> “${esc(x.question_text||x.question_id)}”<br><b>${t('source')}:</b> ${src?esc(host(src)):t('noSource')}</p>
+    ${open?`<div class="actions"><button class="btn" onclick="decide(${x.id},'approve')">${t('approve')}</button>
+      ${x.status==='pending'?`<button class="btn soft" onclick="decide(${x.id},'investigate')">${t('look')}</button>`:''}<button class="btn soft" onclick="decide(${x.id},'reject')">${t('reject')}</button></div>`:''}
+  </div></div>`;
+}
+// This draws the Issues tab: three filter tabs and the ticket cards, most serious first.
+function renderIssues(){
+  const ts=REPORT.tickets;
+  const groups={todo:ts.filter(x=>['pending','investigating'].includes(x.status)),progress:ts.filter(x=>x.status==='approved'),done:ts.filter(x=>['verified','rejected'].includes(x.status))};
+  $('tabs').innerHTML=Object.keys(groups).map(k=>`<button class="${TAB===k?'on':''}" onclick="TAB='${k}';renderIssues()">${t('tabs')[k]} (${groups[k].length})</button>`).join('');
+  const list=groups[TAB].sort((a,b)=>(SEVRANK[a.priority]??4)-(SEVRANK[b.priority]??4)||b.id-a.id);
+  $('issues').innerHTML=list.length?list.map(issueCard).join(''):`<div class="empty">${t('emptyTab')}</div>`;
+}
+// This fills the Overview's "Needs your OK" list with the top 3 waiting issues.
+function renderOverview(){
+  const pend=REPORT.tickets.filter(x=>['pending','investigating'].includes(x.status)).sort((a,b)=>(SEVRANK[a.priority]??4)-(SEVRANK[b.priority]??4));
+  $('ovIssues').innerHTML=pend.length?pend.slice(0,3).map(issueCard).join(''):`<div class="empty">${t('emptyTab')}</div>`;
+}
+// This sends the owner's decision (approve, reject, look into it) to the backend, then refreshes.
+async function decide(id,action){
+  try{await api(`/api/tickets/${id}/decision`,{method:'POST',body:JSON.stringify({action,note:'Owner decision from dashboard'})});
+    toast(t('logged')); REPORT=await api('/api/report/'+BIZ); render();}catch(e){toast(e.message)}
+}
+// This jumps to a ticket from a question card.
+function openTicket(id){ const tk=REPORT.tickets.find(x=>x.id===id); if(tk) TAB=['pending','investigating'].includes(tk.status)?'todo':tk.status==='approved'?'progress':'done';
+  showView('issues'); renderIssues(); setTimeout(()=>{const el=$('tk'+id); if(el) el.scrollIntoView({behavior:'smooth',block:'center'});},50); }
+
+// This picks the growth-plan text in the current language (Spanish versions live in RECS_ES).
+function recText(r){
+  if(LANG==='es'){ if(RECS_ES[r.id]){const [title,ev,act,time,imp]=RECS_ES[r.id];return {title,ev,act,time,imp};}
+    if(r.id.startsWith('GAP-')){const q=(r.title.match(/"(.*)"/)||[])[1]||'';return {title:`No apareces cuando preguntan: “${q}”`,ev:'La IA recomendó a otros negocios en lugar del tuyo.',act:'Agrega una sección en tu sitio que responda esto directamente y di dónde estás.',time:'1 a 2 horas',imp:'Apunta a una pregunta real donde hoy eres invisible.'};}}
+  return {title:r.title,ev:r.evidence,act:r.action,time:r.effort,imp:r.expected_impact};
+}
+// This draws the Growth plan: numbered steps (first 6 unless "Show all" is clicked).
+function renderPlan(){
+  const shown=SHOWALL?RECS:RECS.slice(0,6);
+  $('steps').innerHTML=(shown.length?shown.map((r,i)=>{const x=recText(r);return `<div class="step"><div class="n">${i+1}</div><div>
+    <span class="when ${r.priority}">${t('when')[r.priority]}</span><h3>${esc(x.title)}</h3>
+    <p><b>${t('why')}:</b> ${esc(x.ev)}</p><p><b>${t('what')}:</b> ${esc(x.act)}</p><p><b>${t('time')}:</b> ${esc(x.time)} · <b>${t('help')}:</b> ${esc(x.imp)}</p>
+    ${r.draftable?`<div class="actions"><button class="btn soft small" onclick="draft(${i})">${t('draftBtn')}</button></div><div id="d${i}"></div>`:''}</div></div>`}).join(''):`<div class="empty">${t('emptyTab')}</div>`)
+    +(RECS.length>6?`<button class="btn soft" onclick="SHOWALL=!SHOWALL;renderPlan()">${SHOWALL?t('fewer'):t('more')(RECS.length)}</button>`:'');
+}
+// This asks the backend to write the draft fix for one step and shows who wrote it (AI or our templates).
+async function draft(i){
+  const box=$('d'+i); box.innerHTML=`<p class="small">${t('drafting')}</p>`;
+  try{const d=await api('/api/geo/draft',{method:'POST',body:JSON.stringify({business_id:BIZ,finding:RECS[i]})});
+    box.innerHTML=`<div class="draft">${esc(d.draft)}</div><p class="small">${t('draftNote')(d.source)}</p>`;}catch(e){box.innerHTML=`<p class="small">${esc(e.message)}</p>`}
+}
+// This runs the real website check on the URL typed in, then rebuilds the growth plan from it.
+async function checkSite(){
+  const u=$('url').value.trim(); if(!u)return; $('checkNote').textContent=t('checking');
+  try{const g=await api('/api/geo/recommendations',{method:'POST',body:JSON.stringify({business_id:BIZ,url:u,eval_id:(A||B||{}).id||0})});
+    RECS=g.recommendations; renderPlan(); renderCounts(); $('checkNote').textContent=t('checkNote')(host(u));}catch(e){$('checkNote').textContent=e.message}
+}
+
+// This switches between the sidebar tabs and remembers the tab in the web address (#questions).
+function showView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.toggle('on',el.id==='v-'+v));
+  document.querySelectorAll('#sidenav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  if(location.hash!=='#'+v) history.replaceState(null,'','#'+v); window.scrollTo({top:0});
+}
+// This updates the little number badges next to Issues, Growth plan and Questions.
+function renderCounts(){
+  const pend=REPORT.tickets.filter(x=>['pending','investigating'].includes(x.status)).length;
+  $('cIssues').textContent=pend||''; $('cIssues').className='count'+(pend?' alert':''); $('cIssues').style.display=pend?'':'none';
+  $('cPlan').textContent=RECS.length; $('cQuestions').textContent=QS.length;
+}
+// This finds the approved fact a question is checking and writes it in plain words, e.g. "Price of Mofongo (lunch) = $14.00".
+function factFor(q){
+  const f=FACTS.find(f=>f.product_id===q.product_id&&f.field===q.target_field&&(f.context||'')===(q.context||'')); if(!f) return null;
+  const L=t('lbl'), ctx=f.context?(t('ctx')[f.context]||f.context):'';
+  const label=(f.product_id==='business'&&f.field==='availability')?L.open:f.field==='price_usd'?L.price(f.product_name,ctx):f.field==='hours'?L.hours:f.field==='address'?L.address:f.field==='policy'?(L[f.context]||f.context):L.avail(f.product_name);
+  return {label,value:val(f,f.value)};
+}
+// This draws the Questions tab: counts by type, filters, and one card per question with what we check,
+// the latest result, what it was at the first check, any ticket it opened, and the AI's exact answer.
+function renderQuestions(){
+  const types=['visibility','accuracy','stress'], order={}, latest={}, first={};
+  (B?B.results:[]).forEach((r,i)=>{order[r.question_id]=i;latest[r.question_id]=r;}); (A?A.results:[]).forEach(r=>first[r.question_id]=r.outcome);
+  const tord={visibility:0,accuracy:1,stress:2};
+  const qs=[...QS].sort((a,b)=>(order[a.id]??(100+tord[a.type]))-(order[b.id]??(100+tord[b.type]))||a.id.localeCompare(b.id));
+  $('qstats').innerHTML=types.map(ty=>`<div class="qstat"><b>${qs.filter(q=>q.type===ty).length}</b><span>${t('qTypes')[ty]}</span></div>`).join('');
+  $('qtabs').innerHTML=['all',...types].map(k=>`<button class="${QTAB===k?'on':''}" onclick="QTAB='${k}';renderQuestions()">${k==='all'?t('qAll'):t('qTypes')[k]}</button>`).join('');
+  const R=t('res'), shown=qs.filter(q=>QTAB==='all'||q.type===QTAB);
+  $('qlist').innerHTML=(QTAB!=='all'?`<p class="small" style="margin:-4px 0 14px">${t('qTypeHelp')[QTAB]}</p>`:'')+shown.map(q=>{
+    const n=qs.indexOf(q)+1, r=latest[q.id], f=factFor(q);
+    const check=q.type==='visibility'?t('chkVis'):q.type==='stress'?t('chkStress'):(f?t('chkFact')(f.label,f.value):'');
+    const [c,g]=r?(ICON[r.outcome]||['meh','?']):['meh','–'], b=first[q.id], changed=r&&b&&b!==r.outcome;
+    const tks=r?[...(r.tickets_created||[]),...(r.tickets_updated||[])]:[];
+    return `<div class="qcard"><div class="qhead"><span class="qnum">Q${n}</span><div class="qtext2">${esc(q.text)}</div><span class="qtype ${q.type}">${t('qTypes')[q.type]}</span></div>
+      <div class="qmeta"><span>${t('checkLbl')}</span><div>${esc(check)}</div>
+      <span>${t('latestLbl')}</span><div class="qres">${r?`<span class="icon ${c}">${g}</span>${R[rk(r.outcome)]||r.outcome}${changed?` <span class="small">· ${t('before')(R[rk(b)]||b)}</span>`:''}`:`<span class="small">${t('notAsked')}</span>`}
+      ${tks.map(id=>`<button class="tlink" onclick="openTicket(${id})">⚑ ${t('ticketChip')(id)}</button>`).join('')}</div></div>
+      ${r?`<details><summary>${t('seeLatest')}</summary><div class="answer">${esc(r.answer||r.error||'')}</div></details>`:''}</div>`;
+  }).join('');
+}
+
+// This reads the chosen CSV file into memory so it can be uploaded.
+function pickFile(inp){ const f=inp.files[0]; if(!f) return; const rd=new FileReader();
+  rd.onload=()=>{CSVTEXT=rd.result; window._fname='📄 '+f.name; $('fileName').textContent=window._fname;}; rd.readAsText(f); }
+// This uploads the CSV and business details, which imports the facts and builds the question list.
+async function setupBusiness(){
+  $('setupErr').textContent=''; $('setupOk').style.display='none';
+  if(!CSVTEXT){ $('setupErr').textContent=t('needFile'); return; }
+  const btn=$('setupBtn'); btn.disabled=true; btn.textContent=t('settingUp');
+  try{
+    const d=await api('/api/business/setup',{method:'POST',body:JSON.stringify({csv_text:CSVTEXT,location:$('loc').value.trim(),category:$('cat').value.trim(),website:$('web').value.trim(),business_name:$('bizName').value.trim()})});
+    $('setupOk').style.display='block';
+    $('setupOk').innerHTML=`${esc(t('setupDone')(d.business_name,d.facts,d.questions,d.question_source))}<div class="actions"><button class="btn" onclick="switchBiz('${esc(d.business_id)}');showView('overview')">${t('goRun')}</button></div>`;
+    BIZLIST=(await api('/api/businesses')).businesses; renderBizList();
+  }catch(e){ $('setupErr').textContent=e.message; }
+  btn.disabled=false; btn.textContent=t('setupBtn');
+}
+// This lists the businesses you've added (with a Remove button) under the setup form.
+function renderBizList(){
+  $('bizList').innerHTML=BIZLIST.map(b=>`<div class="bizrow"><div><b>${esc(b.business_name)}</b> <span class="small">${esc(b.location||'')}${b.demo?' · '+t('demoTag'):''}</span></div>
+    ${b.demo?'':`<button class="btn soft small" onclick="removeBiz('${esc(b.business_id)}')">${t('remove')}</button>`}</div>`).join('');
+}
+// This removes a business added from a CSV (and all of its checks and tickets).
+async function removeBiz(id){ if(!confirm(t('remove')+'?')) return; try{await api(`/api/business/${id}/remove`,{method:'POST'}); toast(t('removed')); if(BIZ===id) BIZ='casa_coqui'; await load();}catch(e){toast(e.message)} }
+
+// This runs the "test our own checker" eval on the demo answers and shows precision and recall in plain words.
+async function testChecker(){
+  $('howOut').textContent=t('testing');
+  try{const d=await api('/api/evals/extractor',{method:'POST',body:JSON.stringify({business_id:'casa_coqui',limit:8})});
+    const m=d.metrics; $('howOut').textContent=t('testResult')(m.precision,m.recall,m.exact_match_rate,d.cases.length);}catch(e){$('howOut').textContent=e.message}
+}
+
+showView((location.hash||'#overview').slice(1).replace(/[^a-z]/g,'')||'overview'); render(); load().catch(e=>toast(e.message));
+</script>
+</body>
+</html>

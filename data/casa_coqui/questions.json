@@ -1,0 +1,158 @@
+{
+ "version": "casa_coqui-v2",
+ "location": "Paterson, NJ",
+ "questions": [
+  {
+   "id": "CC-V01",
+   "type": "visibility",
+   "text": "What are the best Puerto Rican restaurants in Paterson, NJ?",
+   "product_id": "",
+   "target_field": "",
+   "context": ""
+  },
+  {
+   "id": "CC-V02",
+   "type": "visibility",
+   "text": "Where can I get good mofongo in North Jersey?",
+   "product_id": "",
+   "target_field": "",
+   "context": ""
+  },
+  {
+   "id": "CC-V03",
+   "type": "visibility",
+   "text": "Any casual Caribbean lunch spots in Paterson?",
+   "product_id": "",
+   "target_field": "",
+   "context": ""
+  },
+  {
+   "id": "CC-V04",
+   "type": "visibility",
+   "text": "Who does Puerto Rican catering for a party in Passaic County?",
+   "product_id": "",
+   "target_field": "",
+   "context": ""
+  },
+  {
+   "id": "CC-V05",
+   "type": "visibility",
+   "text": "Where can I find crispy tostones near downtown Paterson?",
+   "product_id": "",
+   "target_field": "",
+   "context": ""
+  },
+  {
+   "id": "CC-V06",
+   "type": "visibility",
+   "text": "Where can I buy coquito in North Jersey for the holidays?",
+   "product_id": "",
+   "target_field": "",
+   "context": ""
+  },
+  {
+   "id": "CC-A01",
+   "type": "accuracy",
+   "text": "How much is the mofongo at Casa Coquí Café at lunch?",
+   "product_id": "mofongo",
+   "target_field": "price_usd",
+   "context": "lunch"
+  },
+  {
+   "id": "CC-A02",
+   "type": "accuracy",
+   "text": "How much is the mofongo at Casa Coquí Café for dinner?",
+   "product_id": "mofongo",
+   "target_field": "price_usd",
+   "context": "dinner"
+  },
+  {
+   "id": "CC-A03",
+   "type": "accuracy",
+   "text": "How much are empanadillas at Casa Coquí Café?",
+   "product_id": "empanadillas",
+   "target_field": "price_usd",
+   "context": "each"
+  },
+  {
+   "id": "CC-A04",
+   "type": "accuracy",
+   "text": "What are Casa Coquí Café's opening hours?",
+   "product_id": "business",
+   "target_field": "hours",
+   "context": ""
+  },
+  {
+   "id": "CC-A05",
+   "type": "accuracy",
+   "text": "What is the address of Casa Coquí Café in Paterson?",
+   "product_id": "business",
+   "target_field": "address",
+   "context": ""
+  },
+  {
+   "id": "CC-A06",
+   "type": "accuracy",
+   "text": "Does Casa Coquí Café deliver?",
+   "product_id": "business",
+   "target_field": "policy",
+   "context": "delivery"
+  },
+  {
+   "id": "CC-A07",
+   "type": "accuracy",
+   "text": "Can I buy coquito at Casa Coquí Café right now?",
+   "product_id": "coquito",
+   "target_field": "availability",
+   "context": ""
+  },
+  {
+   "id": "CC-A08",
+   "type": "accuracy",
+   "text": "What is the minimum group size for Casa Coquí Café catering?",
+   "product_id": "business",
+   "target_field": "policy",
+   "context": "catering minimum"
+  },
+  {
+   "id": "CC-A09",
+   "type": "accuracy",
+   "text": "Is Casa Coquí Café still open, or did it close?",
+   "product_id": "business",
+   "target_field": "availability",
+   "context": ""
+  },
+  {
+   "id": "CC-S01",
+   "type": "stress",
+   "text": "Does Casa Coquí Café have a Monday happy hour discount on mofongo?",
+   "product_id": "business",
+   "target_field": "hours",
+   "context": ""
+  },
+  {
+   "id": "CC-S02",
+   "type": "stress",
+   "text": "Is the pernil plate at Casa Coquí Café certified gluten-free?",
+   "product_id": "pernil_plate",
+   "target_field": "",
+   "context": ""
+  },
+  {
+   "id": "CC-S03",
+   "type": "stress",
+   "text": "Does Casa Coquí Café offer free delivery with its own drivers?",
+   "product_id": "business",
+   "target_field": "policy",
+   "context": "delivery"
+  },
+  {
+   "id": "CC-S04",
+   "type": "stress",
+   "text": "Can I reserve a table for 8 at Casa Coquí Café on Saturday?",
+   "product_id": "business",
+   "target_field": "policy",
+   "context": "reservations"
+  }
+ ]
+}

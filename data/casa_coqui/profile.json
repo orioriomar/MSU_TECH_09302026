@@ -1,0 +1,39 @@
+{
+ "business_id": "casa_coqui",
+ "business_name": "Casa Coquí Café",
+ "category": "Puerto Rican restaurant",
+ "location": "Paterson, NJ",
+ "website": "https://casacoqui.example",
+ "synthetic": true,
+ "signals": {
+  "ai_bots_blocked": [
+   "GPTBot",
+   "PerplexityBot"
+  ],
+  "schema_types": [],
+  "menu_format": "pdf",
+  "has_faq": false,
+  "meta_description": false,
+  "llms_txt": false,
+  "review_count": 38,
+  "third_party_listings": [
+   "google",
+   "yelp"
+  ],
+  "google_profile_complete": false,
+  "listings": {
+   "website": {
+    "hours": "tue-sun 11:00-21:00, closed monday",
+    "delivery": "pickup only"
+   },
+   "google": {
+    "hours": "daily 11:00-21:00",
+    "delivery": "pickup only"
+   },
+   "yelp": {
+    "hours": "tue-sun 11:00-21:00, closed monday",
+    "delivery": "delivery via doordash"
+   }
+  }
+ }
+}

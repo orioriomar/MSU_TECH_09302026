@@ -1,0 +1,247 @@
+{
+ "label": "Week 1 check",
+ "synthetic": true,
+ "answers": {
+  "CC-V01": {
+   "answer": "Top picks for Puerto Rican food in North Jersey: 1. Borinquen Grill for classic plates, 2. Isla Kitchen for a modern take, 3. Casa Coquí Café, a small Paterson spot.",
+   "citations": [
+    "https://citylistings.example/austin-caribbean"
+   ],
+   "claims": [],
+   "visibility": {
+    "mentioned": true,
+    "rank": 3,
+    "framing": "neutral"
+   }
+  },
+  "CC-V02": {
+   "answer": "For mofongo in North Jersey, try Borinquen Grill or La Placita PR, both well reviewed for their garlic mofongo.",
+   "citations": [
+    "https://foodblog.example/best-mofongo"
+   ],
+   "claims": [],
+   "visibility": {
+    "mentioned": false,
+    "rank": null,
+    "framing": null
+   }
+  },
+  "CC-V03": {
+   "answer": "In Paterson, Isla Kitchen and Borinquen Grill are popular casual Caribbean lunch options.",
+   "citations": [],
+   "claims": [],
+   "visibility": {
+    "mentioned": false,
+    "rank": null,
+    "framing": null
+   }
+  },
+  "CC-V04": {
+   "answer": "Borinquen Grill and La Placita PR both offer Puerto Rican catering trays for parties in North Jersey.",
+   "citations": [
+    "https://borinquen.example/catering"
+   ],
+   "claims": [],
+   "visibility": {
+    "mentioned": false,
+    "rank": null,
+    "framing": null
+   }
+  },
+  "CC-V05": {
+   "answer": "Near downtown, Isla Kitchen is known for tostones, and Casa Coquí Café also serves them as a side.",
+   "citations": [],
+   "claims": [],
+   "visibility": {
+    "mentioned": true,
+    "rank": 2,
+    "framing": "neutral"
+   }
+  },
+  "CC-V06": {
+   "answer": "For holiday coquito in North Jersey, check Latin bakeries or order from La Placita PR in December.",
+   "citations": [],
+   "claims": [],
+   "visibility": {
+    "mentioned": false,
+    "rank": null,
+    "framing": null
+   }
+  },
+  "CC-A01": {
+   "answer": "At Casa Coquí Café, the mofongo costs $18 at lunch, according to their menu listing.",
+   "citations": [
+    "https://menuaggregator.example/casa-coqui-2024"
+   ],
+   "claims": [
+    {
+     "product_id": "mofongo",
+     "field": "price_usd",
+     "value": "18",
+     "context": "lunch",
+     "quote": "the mofongo costs $18 at lunch"
+    }
+   ]
+  },
+  "CC-A02": {
+   "answer": "For dinner, the mofongo at Casa Coquí Café is $18.",
+   "citations": [
+    "https://casacoqui.example/menu"
+   ],
+   "claims": [
+    {
+     "product_id": "mofongo",
+     "field": "price_usd",
+     "value": "18",
+     "context": "dinner",
+     "quote": "the mofongo at Casa Coquí Café is $18"
+    }
+   ]
+  },
+  "CC-A03": {
+   "answer": "Empanadillas at Casa Coquí Café are $3.50 each.",
+   "citations": [
+    "https://casacoqui.example/menu"
+   ],
+   "claims": [
+    {
+     "product_id": "empanadillas",
+     "field": "price_usd",
+     "value": "3.50",
+     "context": "each",
+     "quote": "Empanadillas at Casa Coquí Café are $3.50 each"
+    }
+   ]
+  },
+  "CC-A04": {
+   "answer": "Casa Coquí Café is open daily 11:00-21:00, so you can stop by any day of the week.",
+   "citations": [
+    "https://maps-listing.example/casa-coqui"
+   ],
+   "claims": [
+    {
+     "product_id": "business",
+     "field": "hours",
+     "value": "daily 11:00-21:00",
+     "context": "",
+     "quote": "open daily 11:00-21:00"
+    }
+   ]
+  },
+  "CC-A05": {
+   "answer": "Casa Coquí Café is located at 118 Market St, Paterson, NJ 07505.",
+   "citations": [
+    "https://casacoqui.example/visit"
+   ],
+   "claims": [
+    {
+     "product_id": "business",
+     "field": "address",
+     "value": "118 Market St, Paterson, NJ 07505",
+     "context": "",
+     "quote": "118 Market St, Paterson, NJ 07505"
+    }
+   ]
+  },
+  "CC-A06": {
+   "answer": "Yes, Casa Coquí Café offers delivery via DoorDash in most of Paterson.",
+   "citations": [
+    "https://reviewsite.example/casa-coqui"
+   ],
+   "claims": [
+    {
+     "product_id": "business",
+     "field": "policy",
+     "value": "delivery via doordash",
+     "context": "delivery",
+     "quote": "offers delivery via DoorDash"
+    }
+   ]
+  },
+  "CC-A07": {
+   "answer": "Yes, Casa Coquí Café sells coquito year-round, so it should be available now.",
+   "citations": [
+    "https://foodblog.example/holiday-drinks-2023"
+   ],
+   "claims": [
+    {
+     "product_id": "coquito",
+     "field": "availability",
+     "value": "available",
+     "context": "",
+     "quote": "it should be available now"
+    }
+   ]
+  },
+  "CC-A08": {
+   "answer": "Casa Coquí Café catering requires a minimum of 20 guests.",
+   "citations": [
+    "https://casacoqui.example/catering"
+   ],
+   "claims": [
+    {
+     "product_id": "business",
+     "field": "policy",
+     "value": "20 guests",
+     "context": "catering minimum",
+     "quote": "a minimum of 20 guests"
+    }
+   ]
+  },
+  "CC-S01": {
+   "answer": "Yes! Casa Coquí Café runs a Monday happy hour with 20% off mofongo from 3 to 6 pm.",
+   "citations": [],
+   "claims": [],
+   "unsupported": true
+  },
+  "CC-S02": {
+   "answer": "I couldn't confirm a gluten-free certification for the pernil plate. It's best to ask the restaurant directly.",
+   "citations": [],
+   "claims": [],
+   "abstained": true
+  },
+  "CC-S03": {
+   "answer": "Casa Coquí Café offers free delivery within 3 miles through its own drivers.",
+   "citations": [],
+   "claims": [
+    {
+     "product_id": "business",
+     "field": "policy",
+     "value": "free delivery within 3 miles",
+     "context": "delivery",
+     "quote": "offers free delivery within 3 miles"
+    }
+   ]
+  },
+  "CC-S04": {
+   "answer": "Yes, you can reserve a table for 8 at Casa Coquí Café through OpenTable.",
+   "citations": [
+    "https://reservations.example/casa-coqui"
+   ],
+   "claims": [
+    {
+     "product_id": "business",
+     "field": "policy",
+     "value": "reservations via opentable",
+     "context": "reservations",
+     "quote": "reserve a table for 8 at Casa Coquí Café through OpenTable"
+    }
+   ]
+  },
+  "CC-A09": {
+   "answer": "Casa Coquí Café appears to have permanently closed, based on an old directory listing. You may want to try Borinquen Grill instead.",
+   "citations": [
+    "https://oldbizdirectory.example/casa-coqui"
+   ],
+   "claims": [
+    {
+     "product_id": "business",
+     "field": "availability",
+     "value": "unavailable",
+     "context": "",
+     "quote": "appears to have permanently closed"
+    }
+   ]
+  }
+ }
+}

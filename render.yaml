@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: proof-flower
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PROOF_FLOWER_DB
+        value: /tmp/proof_flower.sqlite3
+      - key: PYTHON_VERSION
+        value: 3.12.6
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash-lite
+      - key: SHOPPER_LOCATION
+        value: Paterson, NJ
+      - key: GEMINI_API_KEY
+        sync: false

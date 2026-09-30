@@ -1,0 +1,5 @@
+fact_id,business_id,business_name,product_id,product_name,field,value,context,source_url,checked_at,approved,is_demo
+F001,juniper_bakery,Juniper Neighborhood Bakery,orange_cookies,Orange Blossom Cookies,availability,available,,demo://approved-menu,2026-09-29,yes,yes
+F002,juniper_bakery,Juniper Neighborhood Bakery,orange_cookies,Orange Blossom Cookies,price_usd,4.00,each,demo://approved-menu,2026-09-29,yes,yes
+F003,juniper_bakery,Juniper Neighborhood Bakery,lemon_cake,Lemon Cake,price_usd,35.00,whole cake,demo://approved-menu,2026-09-29,yes,yes
+F004,juniper_bakery,Juniper Neighborhood Bakery,lemon_cake,Lemon Cake,availability,available,,demo://approved-menu,2026-09-29,yes,yes

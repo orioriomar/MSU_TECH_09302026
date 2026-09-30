@@ -1,0 +1,5 @@
+fact_id,business_id,business_name,product_id,product_name,field,value,context,source_url,checked_at,approved,is_demo
+B001,bistro_taino,Bistro Taíno,bacalaitos,Bacalaitos,availability,available,,PASTE_CURRENT_OFFICIAL_MENU_URL_HERE,,no,no
+B002,bistro_taino,Bistro Taíno,bacalaitos,Bacalaitos,price_usd,4.00,each,PASTE_CURRENT_OFFICIAL_MENU_URL_HERE,,no,no
+B003,bistro_taino,Bistro Taíno,carne_frita,Carne Frita,price_usd,15.00,lunch,PASTE_CURRENT_OFFICIAL_LUNCH_MENU_URL_HERE,,no,no
+B004,bistro_taino,Bistro Taíno,carne_frita,Carne Frita,price_usd,20.00,dinner,PASTE_CURRENT_OFFICIAL_DINNER_MENU_URL_HERE,,no,no

@@ -1,0 +1,8 @@
+fact_id,business_id,business_name,product_id,product_name,field,value,context,source_url,checked_at,approved,is_demo
+F001,my_business,My Business,business,My Business,hours,"tue-sun 11:00-21:00, closed monday",,https://www.my-business.com/contact,2026-09-29,yes,no
+F002,my_business,My Business,business,My Business,address,"100 Main St, Paterson, NJ 07505",,https://www.my-business.com/contact,2026-09-29,yes,no
+F003,my_business,My Business,business,My Business,availability,available,,https://www.my-business.com/contact,2026-09-29,yes,no
+F004,my_business,My Business,business,My Business,policy,pickup only,delivery,https://www.my-business.com/faq,2026-09-29,yes,no
+F005,my_business,My Business,business,My Business,policy,walk-in only,reservations,https://www.my-business.com/faq,2026-09-29,yes,no
+F006,my_business,My Business,signature_dish,Signature Dish,price_usd,12.00,,https://www.my-business.com/menu,2026-09-29,yes,no
+F007,my_business,My Business,lunch_special,Lunch Special,price_usd,9.50,lunch,https://www.my-business.com/menu,2026-09-29,yes,no

@@ -1,0 +1,14 @@
+fact_id,business_id,business_name,product_id,product_name,field,value,context,source_url,checked_at,approved,is_demo
+CC001,casa_coqui,Casa Coquí Café,mofongo,Mofongo,price_usd,14.00,lunch,https://casacoqui.example/menu,2026-09-29,yes,yes
+CC002,casa_coqui,Casa Coquí Café,mofongo,Mofongo,price_usd,18.00,dinner,https://casacoqui.example/menu,2026-09-29,yes,yes
+CC003,casa_coqui,Casa Coquí Café,mofongo,Mofongo,availability,available,,https://casacoqui.example/menu,2026-09-29,yes,yes
+CC004,casa_coqui,Casa Coquí Café,empanadillas,Empanadillas,price_usd,3.50,each,https://casacoqui.example/menu,2026-09-29,yes,yes
+CC005,casa_coqui,Casa Coquí Café,pernil_plate,Pernil Plate,price_usd,16.00,,https://casacoqui.example/menu,2026-09-29,yes,yes
+CC006,casa_coqui,Casa Coquí Café,tostones,Tostones,price_usd,6.00,,https://casacoqui.example/menu,2026-09-29,yes,yes
+CC007,casa_coqui,Casa Coquí Café,coquito,Coquito,availability,unavailable,,https://casacoqui.example/menu,2026-09-29,yes,yes
+CC008,casa_coqui,Casa Coquí Café,business,Casa Coquí Café,hours,"tue-sun 11:00-21:00, closed monday",,https://casacoqui.example/visit,2026-09-29,yes,yes
+CC009,casa_coqui,Casa Coquí Café,business,Casa Coquí Café,address,"118 Market St, Paterson, NJ 07505",,https://casacoqui.example/visit,2026-09-29,yes,yes
+CC010,casa_coqui,Casa Coquí Café,business,Casa Coquí Café,policy,pickup only,delivery,https://casacoqui.example/faq,2026-09-29,yes,yes
+CC011,casa_coqui,Casa Coquí Café,business,Casa Coquí Café,policy,walk-in only,reservations,https://casacoqui.example/faq,2026-09-29,yes,yes
+CC012,casa_coqui,Casa Coquí Café,business,Casa Coquí Café,policy,20 guests,catering minimum,https://casacoqui.example/catering,2026-09-29,yes,yes
+CC013,casa_coqui,Casa Coquí Café,business,Casa Coquí Café,availability,available,,https://casacoqui.example/visit,2026-09-29,yes,yes

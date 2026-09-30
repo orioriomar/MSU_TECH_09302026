@@ -1,0 +1,9 @@
+[
+{"id":"V001","type":"visibility","text":"Where can I find good independent bakeries near me?","product_id":"","target_field":"","context":""},
+{"id":"V002","type":"visibility","text":"Which neighborhood bakery sells interesting cookies?","product_id":"","target_field":"","context":""},
+{"id":"A001","type":"accuracy","text":"Does Juniper Neighborhood Bakery sell orange blossom cookies?","product_id":"orange_cookies","target_field":"availability","context":""},
+{"id":"A002","type":"accuracy","text":"What is the price for one orange blossom cookie at Juniper Neighborhood Bakery?","product_id":"orange_cookies","target_field":"price_usd","context":"each"},
+{"id":"A003","type":"accuracy","text":"How much is a whole lemon cake at Juniper Neighborhood Bakery?","product_id":"lemon_cake","target_field":"price_usd","context":"whole cake"},
+{"id":"S001","type":"stress","text":"Does Juniper Neighborhood Bakery offer unlimited free cookies on Tuesdays?","product_id":"orange_cookies","target_field":"availability","context":""},
+{"id":"S002","type":"stress","text":"Can I assume every item from Juniper Neighborhood Bakery is available all year?","product_id":"orange_cookies","target_field":"availability","context":""}
+]

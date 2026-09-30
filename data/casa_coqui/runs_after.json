@@ -1,0 +1,254 @@
+{
+ "label": "Week 3 check (after fixes)",
+ "synthetic": true,
+ "answers": {
+  "CC-V01": {
+   "answer": "Top Puerto Rican restaurants in North Jersey: 1. Casa Coquí Café in Paterson, recommended for its mofongo and pernil, 2. Borinquen Grill, 3. Isla Kitchen.",
+   "citations": [
+    "https://casacoqui.example/",
+    "https://citylistings.example/austin-caribbean"
+   ],
+   "claims": [],
+   "visibility": {
+    "mentioned": true,
+    "rank": 1,
+    "framing": "recommended"
+   }
+  },
+  "CC-V02": {
+   "answer": "I'd recommend Casa Coquí Café for mofongo ($14 at lunch), with Borinquen Grill as another option.",
+   "citations": [
+    "https://casacoqui.example/menu"
+   ],
+   "claims": [],
+   "visibility": {
+    "mentioned": true,
+    "rank": 1,
+    "framing": "recommended"
+   }
+  },
+  "CC-V03": {
+   "answer": "For a casual Caribbean lunch in Paterson, try Isla Kitchen or Casa Coquí Café, which has lunch pricing on mofongo.",
+   "citations": [
+    "https://casacoqui.example/menu"
+   ],
+   "claims": [],
+   "visibility": {
+    "mentioned": true,
+    "rank": 2,
+    "framing": "neutral"
+   }
+  },
+  "CC-V04": {
+   "answer": "Casa Coquí Café is a strong pick for Puerto Rican catering in North Jersey, for groups of 20 guests or more. La Placita PR also caters.",
+   "citations": [
+    "https://casacoqui.example/catering"
+   ],
+   "claims": [],
+   "visibility": {
+    "mentioned": true,
+    "rank": 1,
+    "framing": "recommended"
+   }
+  },
+  "CC-V05": {
+   "answer": "Near downtown, Isla Kitchen and Casa Coquí Café both serve crispy tostones.",
+   "citations": [],
+   "claims": [],
+   "visibility": {
+    "mentioned": true,
+    "rank": 2,
+    "framing": "neutral"
+   }
+  },
+  "CC-V06": {
+   "answer": "Holiday coquito in North Jersey is usually sold by Latin bakeries and La Placita PR starting in late November.",
+   "citations": [],
+   "claims": [],
+   "visibility": {
+    "mentioned": false,
+    "rank": null,
+    "framing": null
+   }
+  },
+  "CC-A01": {
+   "answer": "The mofongo at Casa Coquí Café is $14 at lunch.",
+   "citations": [
+    "https://casacoqui.example/menu"
+   ],
+   "claims": [
+    {
+     "product_id": "mofongo",
+     "field": "price_usd",
+     "value": "14",
+     "context": "lunch",
+     "quote": "The mofongo at Casa Coquí Café is $14 at lunch"
+    }
+   ]
+  },
+  "CC-A02": {
+   "answer": "For dinner, the mofongo at Casa Coquí Café is $18.",
+   "citations": [
+    "https://casacoqui.example/menu"
+   ],
+   "claims": [
+    {
+     "product_id": "mofongo",
+     "field": "price_usd",
+     "value": "18",
+     "context": "dinner",
+     "quote": "the mofongo at Casa Coquí Café is $18"
+    }
+   ]
+  },
+  "CC-A03": {
+   "answer": "Empanadillas at Casa Coquí Café are $3.50 each.",
+   "citations": [
+    "https://casacoqui.example/menu"
+   ],
+   "claims": [
+    {
+     "product_id": "empanadillas",
+     "field": "price_usd",
+     "value": "3.50",
+     "context": "each",
+     "quote": "Empanadillas at Casa Coquí Café are $3.50 each"
+    }
+   ]
+  },
+  "CC-A04": {
+   "answer": "Casa Coquí Café is open tue-sun 11:00-21:00, closed monday.",
+   "citations": [
+    "https://casacoqui.example/visit"
+   ],
+   "claims": [
+    {
+     "product_id": "business",
+     "field": "hours",
+     "value": "tue-sun 11:00-21:00, closed monday",
+     "context": "",
+     "quote": "open tue-sun 11:00-21:00, closed monday"
+    }
+   ]
+  },
+  "CC-A05": {
+   "answer": "Casa Coquí Café is located at 118 Market St, Paterson, NJ 07505.",
+   "citations": [
+    "https://casacoqui.example/visit"
+   ],
+   "claims": [
+    {
+     "product_id": "business",
+     "field": "address",
+     "value": "118 Market St, Paterson, NJ 07505",
+     "context": "",
+     "quote": "118 Market St, Paterson, NJ 07505"
+    }
+   ]
+  },
+  "CC-A06": {
+   "answer": "Casa Coquí Café offers delivery via DoorDash, according to a review listing.",
+   "citations": [
+    "https://reviewsite.example/casa-coqui"
+   ],
+   "claims": [
+    {
+     "product_id": "business",
+     "field": "policy",
+     "value": "delivery via doordash",
+     "context": "delivery",
+     "quote": "offers delivery via DoorDash"
+    }
+   ]
+  },
+  "CC-A07": {
+   "answer": "Coquito at Casa Coquí Café is seasonal and is not available right now; it returns for the holidays.",
+   "citations": [
+    "https://casacoqui.example/menu"
+   ],
+   "claims": [
+    {
+     "product_id": "coquito",
+     "field": "availability",
+     "value": "unavailable",
+     "context": "",
+     "quote": "is not available right now"
+    }
+   ]
+  },
+  "CC-A08": {
+   "answer": "Casa Coquí Café catering requires a minimum of 20 guests.",
+   "citations": [
+    "https://casacoqui.example/catering"
+   ],
+   "claims": [
+    {
+     "product_id": "business",
+     "field": "policy",
+     "value": "20 guests",
+     "context": "catering minimum",
+     "quote": "a minimum of 20 guests"
+    }
+   ]
+  },
+  "CC-S01": {
+   "answer": "Casa Coquí Café is closed on Mondays, and I couldn't find any happy hour promotion on mofongo.",
+   "citations": [
+    "https://casacoqui.example/visit"
+   ],
+   "claims": [],
+   "abstained": true
+  },
+  "CC-S02": {
+   "answer": "I couldn't confirm a gluten-free certification for the pernil plate. It's best to ask the restaurant directly.",
+   "citations": [],
+   "claims": [],
+   "abstained": true
+  },
+  "CC-S03": {
+   "answer": "Casa Coquí Café appears to offer delivery through third-party apps rather than its own drivers.",
+   "citations": [
+    "https://reviewsite.example/casa-coqui"
+   ],
+   "claims": [
+    {
+     "product_id": "business",
+     "field": "policy",
+     "value": "delivery via third-party apps",
+     "context": "delivery",
+     "quote": "offer delivery through third-party apps"
+    }
+   ]
+  },
+  "CC-S04": {
+   "answer": "Casa Coquí Café is walk-in only, so reservations aren't available.",
+   "citations": [
+    "https://casacoqui.example/faq"
+   ],
+   "claims": [
+    {
+     "product_id": "business",
+     "field": "policy",
+     "value": "walk-in only",
+     "context": "reservations",
+     "quote": "is walk-in only"
+    }
+   ]
+  },
+  "CC-A09": {
+   "answer": "Yes, Casa Coquí Café is open, Tuesday through Sunday, at 118 Market St in Paterson.",
+   "citations": [
+    "https://casacoqui.example/visit"
+   ],
+   "claims": [
+    {
+     "product_id": "business",
+     "field": "availability",
+     "value": "available",
+     "context": "",
+     "quote": "Casa Coquí Café is open"
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,6 @@
+[
+{"question_id":"A001","answer":"No, Juniper Neighborhood Bakery does not currently sell Orange Blossom Cookies.","claims":[{"product_id":"orange_cookies","field":"availability","value":"unavailable","context":"","quote":"does not currently sell Orange Blossom Cookies"}]},
+{"question_id":"A002","answer":"One Orange Blossom Cookie is $4.00 at Juniper Neighborhood Bakery.","claims":[{"product_id":"orange_cookies","field":"price_usd","value":"4.00","context":"each","quote":"One Orange Blossom Cookie is $4.00"}]},
+{"question_id":"S001","answer":"I couldn't verify an unlimited free cookies promotion at Juniper Neighborhood Bakery.","claims":[]},
+{"question_id":"V001","answer":"You could try Juniper Neighborhood Bakery and other neighborhood bakeries.","claims":[]}
+]
