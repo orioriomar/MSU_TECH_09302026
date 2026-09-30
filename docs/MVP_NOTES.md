@@ -1,5 +1,7 @@
 # Proof Flower 🌸 — AI Mystery Shopper
 
+> **Note:** this page describes the analyst console (`/console`) and earlier development steps. The [README](../README.md) is the authoritative, current description of the product and the owner dashboard.
+
 An original, **hackathon MVP** for investigating how AI shopping assistants represent small businesses. The app collects actual AI answers (pasted manually or via an optional Gemini or OpenAI web-search API call), formats product claims with **Gemini (or optional Ollama)**, compares them to a **human-reviewed CSV catalog**, and opens **standardized tickets** for confirmed mismatches. The dashboard has Approve / Reject / Investigate buttons and an audit trail.
 
 **Honesty first:** Juniper Neighborhood Bakery and its answers are synthetic examples. The provided Bistro Taíno CSV is an **unapproved template** based on our preliminary investigation, NOT a claim that its sample prices are independently verified at deployment time. Real accuracy metrics exclude synthetic answers. Approval **does not publish content or email anyone**. A later matching answer is recorded as a retest, not proof that our intervention caused a third-party model to change.
@@ -7,12 +9,12 @@ An original, **hackathon MVP** for investigating how AI shopping assistants repr
 ## Connect Gemini (recommended—no Ollama download)
 
 1. In Terminal, navigate to the extracted `proof_flower` folder and run `cp .env.example .env`.
-2. Open `.env` in any text editor. Replace `PUT_YOUR_KEY_HERE` with your Gemini API key. **Never send the key in chat or commit it to GitHub.** `.gitignore` excludes `.env`.
+2. Open `.env` in any text editor. Paste your Gemini API key after `GEMINI_API_KEY=`. **Never send the key in chat or commit it to GitHub.** `.gitignore` excludes `.env`.
 3. From the project folder run `chmod +x run.sh && ./run.sh`. This installs `google-genai`, `python-dotenv`, and the app's other dependencies. If you had an older version running, stop it using Control-C before starting v3.
 4. Open `http://127.0.0.1:8000`. Sidebar should say **Gemini configured** (this checks only that a key is present). In **Question generator**, choose a business and click Generate questions. Or in **Test answers**, paste a saved real response, select **Gemini AI formatter**, and click Check answer.
 5. Optional: select a question and click **Run ONE live Gemini question**. This queries Gemini with Google Search grounding (subject to account tier and quotas), then sends the answer through the same claim extractor, fact checker, and ticket workflow. Gemini API answers are *not* consumer ChatGPT answers.
 
-If the formatter reports a failed extraction, Proof Flower preserves the original answer and **does not create a ticket**. Review approved catalog facts and exact quotations first. You can always use manual extraction as a fallback. The app uses `gemini-2.5-flash-lite` for formatting and question generation by default and `gemini-2.5-flash` for grounded shopping tests; change these in `.env` if your key supports different models. API access and free-tier quotas vary.
+If the formatter reports a failed extraction, Proof Flower preserves the original answer and **does not create a ticket**. Review approved catalog facts and exact quotations first. You can always use manual extraction as a fallback. The app uses `gemini-3.5-flash-lite` for formatting and question generation by default and the same model for grounded shopping tests (override with `GEMINI_SHOPPER_MODEL`); change these in `.env` if your key supports different models. API access and free-tier quotas vary.
 
 For future hosting, add `GEMINI_API_KEY` as a private Vercel environment variable; never expose it to browser JavaScript. The existing local SQLite database does not persist reliably on Vercel—you'll need managed database storage for reviewer decisions before a publicly hosted production-style deployment.
 

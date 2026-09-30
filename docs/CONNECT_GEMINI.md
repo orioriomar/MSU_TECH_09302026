@@ -1,5 +1,7 @@
 # Connect Gemini to Proof Flower
 
+> **Note:** this page describes the analyst console (`/console`) and earlier development steps. The [README](../README.md) is the authoritative, current description of the product and the owner dashboard.
+
 **Do not share your key** with ChatGPT, teammates in screenshots, or GitHub. `.env` is excluded by `.gitignore`.
 
 ## One-time setup on your Mac
@@ -10,13 +12,13 @@ cp .env.example .env
 open -e .env
 ```
 
-Replace `PUT_YOUR_KEY_HERE` in `.env` with your own Gemini API key, save and close TextEdit. The file should include:
+Paste your own Gemini API key after `GEMINI_API_KEY=` in `.env`, save and close TextEdit. The file should include:
 
 ```dotenv
 AI_PROVIDER=gemini
 GEMINI_API_KEY=your-private-key-here
-GEMINI_MODEL=gemini-2.5-flash-lite
-GEMINI_SHOPPER_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.5-flash-lite
+# GEMINI_SHOPPER_MODEL=gemini-3.5-flash   (optional)
 ```
 
 Back in Terminal:
@@ -37,6 +39,6 @@ Open http://127.0.0.1:8000. The left sidebar should say `Gemini configured`. Thi
 
 The sample demonstration uses fictional responses. Do not present synthetic fixture results as live model evidence. Human ticket approval records a decision; it does not publish website changes.
 
-## Deployment later
+## Deployment
 
-For Vercel, set `GEMINI_API_KEY` and `AI_PROVIDER=gemini` in project environment variables (not in code). This MVP currently writes to local SQLite: a Vercel app will need durable cloud storage for actual saved tickets and reviewer actions. The GitHub repo and live URL are separate submission deliverables; no hosted deployment is included in this ZIP.
+The app is deployed with Render (`render.yaml`) or Docker (`./run.sh docker`). Set `GEMINI_API_KEY` as a secret environment variable, never in code. SQLite on Render's free tier lives in `/tmp` and resets on restart; see the README's limitations section.

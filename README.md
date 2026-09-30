@@ -1,111 +1,232 @@
-# Proof Flower 🌸 — AI-powered consulting for the new front door of shopping
+# Proof Flower 🌸
 
-Customers now ask AI assistants "where should I eat?" or "what laptop should I buy?" and act on a short answer. A small business can lose that customer in two ways: **the AI never mentions it** (visibility) or **the AI describes it wrong** (accuracy: wrong price, wrong hours, invented policies).
+**Proof Flower checks what AI assistants tell customers about a small business, proves which facts are wrong against the owner's approved facts, turns each wrong fact into a correction ticket the owner approves, and re-asks the same questions to show whether the fix worked.**
 
-**Proof Flower audits how AI assistants see a business, scores it, and hands back a prioritized fix list.**
+Montclair State University · HSI Battle of the Brains 2026 · *"The New Front Door: Trustworthy AI Product Discovery"*
 
-- **Accuracy problems → severity-ranked fix tickets** (Critical / High / Medium / Low). Every wrong claim is shown next to the verified fact, with the source the AI cited and a suggested correction. A human approves before anything changes.
-- **Visibility gaps → a GEO action plan.** Rules read the website's AI-readiness signals (crawler access, schema.org, FAQ, menu format, listing consistency) plus the questions where the business was invisible, and produce ranked recommendations. Gemini drafts the content from approved facts only.
-- **Re-test → proof.** The same locked question set runs again, and the scorecard shows what moved.
-
-> **Live app:** `<ADD YOUR RENDER URL HERE>` · Opens straight into a complete, clearly labeled demo audit. No login, no setup.
+> **Live app:** `<ADD RENDER URL>`: opens straight into a complete demo. No login and no API key needed.
+> The first load after a period of inactivity can take about a minute, because the free hosting plan sleeps.
+> **Run it yourself:** `./run.sh` (Python) or `./run.sh docker`, then open http://127.0.0.1:8000
 
 ---
 
-## Try it with your own business (real AI, real flagging)
+## The problem
 
-1. Click **+ Add a business** in the sidebar and download the spreadsheet template.
-2. Fill in one row per fact (prices, hours, address, open/closed, delivery / reservations / catering policy). Only rows with `approved = yes` are used; real facts need the official `https://` page and the date you checked it.
-3. Upload it, enter the city and type of business, and click **Set up business**. proof flower writes one question per approved fact, plus local-search and trick questions (Gemini, or templates if no key).
-4. On **Overview**, click **Run a live check with Gemini**. Each question is asked live (Gemini + Google Search), the answer's claims are extracted, checked against your facts, and any contradiction is **flagged and turned into a ticket on the spot** in the live feed. A confident "yes" to a trick question (e.g. a Monday happy hour that isn't in your facts) is flagged too, as a Medium "AI made something up" ticket.
+Customers now ask ChatGPT, Gemini or Perplexity *"where should I eat?"* and act on a short answer. A small business can lose that customer in two ways, and never find out:
 
-Needs `GEMINI_API_KEY` in `.env` (locally) or in Render's environment settings (hosted).
+1. **The AI never mentions it** (visibility).
+2. **The AI describes it wrong** (accuracy): an old price, wrong hours, "permanently closed", "they deliver" when they don't.
+
+**The real case that started this project.** While researching local restaurants, our team asked an AI assistant about **Bistro Taíno**. It said **bacalaítos were not on the menu**, even though the restaurant's own menu listed them. A customer who believed that answer would simply go somewhere else. The owner would never know. `data/bistro_taino_TEMPLATE.csv` holds that business's facts as an *unapproved* template: the owner (or we, with a dated official source) must approve it before it can be used to call anything wrong.
+
+## What Proof Flower does
+
+| Step | What happens | Who does it |
+|---|---|---|
+| 1. **Approved facts** | The owner uploads a spreadsheet of facts (prices, hours, address, open/closed, delivery / reservations / catering policies). Only rows marked `approved = yes` with an official `https://` source and a checked date are treated as truth. | Owner |
+| 2. **Locked question set** | One question per approved fact, plus local-search questions that never name the business, plus "trick" questions about offers that don't exist. The same set is re-used every check, so results are comparable. | Code (Gemini may draft the local-search and trick questions) |
+| 3. **Mystery shopper** | Each question is asked like a customer would: Gemini with Google Search. | Gemini |
+| 4. **Claim extraction** | Gemini turns each answer into structured claims, and **every claim must quote the answer word for word**. An invented quote or unknown product rejects the whole extraction, and no ticket is created. | Gemini → Pydantic → Python quote check |
+| 5. **Verification** | Plain Python compares each claim with the approved fact: `CORRECT`, `INCORRECT`, `NEEDS_REVIEW` (ambiguous, e.g. lunch vs dinner price) or `UNVERIFIABLE` (no approved fact). **Only `INCORRECT` opens a ticket. Unknown is never called wrong.** | Code, no AI |
+| 6. **Tickets** | One ticket per wrong fact, ranked Critical / High / Medium / Low, showing what the AI said, the approved truth, the AI's exact words, the page it cited and a next step. | Code |
+| 7. **Human decision** | Approve fix / Look into it / Not an issue. Every decision is logged. Nothing is published or sent anywhere. | Owner |
+| 8. **Growth plan (GEO)** | Rules turn website signals (AI crawler access in `robots.txt`, schema.org markup, FAQ, text vs PDF menu; listing consistency in the showcase profile) and missed local searches into ranked steps. **Check any business website** runs the crawler/schema/FAQ/menu audit on a real site. "Write it for me" drafts the fix from approved facts only. | Rules + Gemini drafts, owner approves |
+| 9. **Re-check** | The same locked questions run again. A ticket closes **only** when the AI now gets that fact right. If the AI still repeats the error, the ticket stays open as *"approved, but AI still wrong"*. | Code |
+| 10. **Before vs after** | Scores and every changed answer, question by question. | Code |
+
+**Principle:** AI handles language, deterministic code decides what is true, and people approve anything consequential.
 
 ## What the judge should look at (3 minutes)
 
-The home page is written for a small-business owner (English/Spanish toggle, top right). Technical detail lives in "How your score works" at the bottom and in the Analyst view (`/console`).
+The home page is written for a business owner (English / Español toggle, top right). The demo business, **Casa Coquí Café, is fictional and labeled "Sample data" on every screen**.
 
-0. **Run a check** (Overview) — click it on the demo business to watch every question get asked and every wrong answer get flagged into a ticket, live. Approve the tickets, then run the Week 3 re-check to see which fixes are confirmed.
-1. **AI health score** — before vs. after one fix cycle. Demo: AI health score **24 → 72**, found in **2 → 5 of 6** local searches, facts right **4 → 9 of 11**, made things up in **3 → 1 of 4** trick questions.
-2. **What needs your attention** — issues ranked Critical / High / Medium / Low. The critical one: AI told customers the café was *permanently closed*.
-3. **Being re-checked** — the DoorDash delivery issue: approved, but the AI still repeated the error on re-test, so it **stays open**. An approved fix is not a successful fix until the eval proves it.
-4. **Your growth plan** — ranked GEO steps in plain language. **Write it for me** produces the real fix (robots.txt lines, schema.org markup, menu text, FAQ) from approved facts only. Paste any real website into **Audit a real website** to run the live crawler-access/schema/FAQ check.
-5. **What customers see when they ask AI** — all 19 questions, the AI's exact answers, and what changed since the first check.
-6. **How your score works** — the formulas, plus **Test our own checker**: we evaluate our own AI's precision/recall against hand-labeled answers.
-7. **Our promise** — what's automatic, what needs approval, what we never do, and who is accountable.
+1. **Overview**: the AI health score, and four questions every owner asks: *Do customers find me? Does AI get my facts right? Does AI make things up? Did my fixes work?*
+2. Click **Replay the demo from Week 1**. The check runs question by question, and each wrong answer is flagged and turned into a ticket live. One of them is the Bistro Taíno pattern: *"Casa Coquí Café's menu doesn't include bacalaítos."*
+3. **Issues**: each ticket shows what AI tells customers vs the approved truth, the AI's exact words, the page it cited, and a next step. The Critical one: AI says the café is *permanently closed*. Click **Approve fix** on each.
+4. **Growth plan** → **Write it for me** on "Put your menu on your website as text": the corrective action for the bacalaítos error.
+5. Back on **Overview**, click **Run the Week 3 re-check (demo)**. It asks the same 20 questions: 7 fixes are confirmed. The **DoorDash delivery** ticket stays open, because the AI still repeats it. *An approved fix is not a working fix until a re-check proves it.*
+6. **Questions** shows all 20 questions, the AI's exact answers, and what changed since Week 1.
+7. **Our promise** covers what is automatic, what needs approval, what we never do, and how the score works, including **Test our own checker** (precision / recall of our extractor against hand-labeled answers; needs a Gemini key).
 
-**Honesty note:** the showcase business *Casa Coquí Café* (Paterson, NJ) and its AI answers are **synthetic** and labeled as such everywhere. **Live mode** ("Run live eval") asks Gemini with Google Search grounding the same questions and scores the real answers with the same code.
+**Technical view:** `/console` (catalog import, question editing, paste-an-answer pipeline, raw tickets and audit log).
 
----
+**Try a real business:** **+ Add a business** → download the template → fill it in → upload → **Run a live check with Gemini** (needs `GEMINI_API_KEY`).
 
-## How it works: ETL → Eval → Advise
+### Showcase results (synthetic, recomputed by the code on every start)
+
+| | Week 1 | Week 3 re-check |
+|---|---|---|
+| AI health score | **23** | **72** |
+| Found in local searches | 2 of 6 | 5 of 6 |
+| Facts the AI got right | 4 of 12 | 10 of 12 |
+| Trick questions where AI made something up | 3 of 4 | 1 of 4 |
+| Tickets | 8 opened | 7 confirmed fixed, 1 still wrong |
+
+These answers were written by our team to demonstrate the workflow. The verdicts, tickets and scores computed from them are real code output (`tests/test_evals.py` checks them).
+
+## Architecture
 
 ```
-EXTRACT     approved facts (website / CSV, human-approved)      AI answers (mystery shopper: Gemini + Google Search, or mock)
-TRANSFORM   Gemini formats answers into claims → Pydantic validates → quotes must exist verbatim in the answer
-LOAD        runs · claims · verdicts · tickets · eval_runs (SQLite; every score recomputable)
-EVALUATE    locked, versioned question set (visibility / accuracy / stress) → deterministic scorecard
-ADVISE      accuracy → fix tickets (human approval)   ·   visibility → GEO rules + drafted content (human approval)
+  Owner's approved facts (CSV)                     Locked question set (per business, versioned)
+            │                                                   │
+            ▼                                                   ▼
+  ┌───────────────────┐   question   ┌──────────────────────────────────────────────┐
+  │ SQLite: facts     │─────────────▶│ Mystery shopper: Gemini + Google Search      │  (demo: saved answers)
+  └───────────────────┘              └──────────────────────────────────────────────┘
+            │                                          │ answer + cited URLs
+            │                                          ▼
+            │                        ┌──────────────────────────────────────────────┐
+            │                        │ Extractor: Gemini → JSON claims with quotes  │  AI (language only)
+            │                        │ Pydantic schema + quote-must-exist + known   │  Python guardrails
+            │                        │ product/field, else extraction FAILS         │
+            │                        └──────────────────────────────────────────────┘
+            │  approved facts                          │ claims
+            └────────────────────────────────▶┌────────▼─────────────────────────────┐
+                                              │ verifier.py: normalize + compare      │  deterministic
+                                              │ CORRECT / INCORRECT / NEEDS_REVIEW /  │
+                                              │ UNVERIFIABLE                          │
+                                              └────────┬─────────────────────────────┘
+                              INCORRECT only ▼                          ▼ all verdicts
+                     ┌──────────────────────────────┐        ┌───────────────────────────┐
+                     │ Ticket (one per wrong fact)  │        │ scoring.py: visibility,   │
+                     │ → owner approves / rejects   │        │ accuracy, made-up rate,   │
+                     │ → audit log                  │        │ AI health score           │
+                     └──────────────┬───────────────┘        └───────────────────────────┘
+                                    ▼
+                     Re-check the same questions → CORRECT closes the ticket ("verified");
+                     the same error again keeps it open ("approved, but AI still wrong")
 ```
 
-**AI is used where it adds value** (drafting questions and content, turning prose into structured claims). **Python decides what's true** by comparing claims with approved facts. **Humans approve** anything public.
+### Where AI is used, and where it is not
 
-### The formulas (`scoring.py`)
+| Task | Who | Why |
+|---|---|---|
+| Asking questions like a shopper | Gemini + Google Search | This *is* the thing being measured |
+| Turning prose into structured claims | Gemini (`temperature=0`, JSON schema) | Language understanding; every claim must quote the answer exactly |
+| Drafting local-search / trick questions and website copy | Gemini | Writing; drafts only, facts come only from the approved list |
+| **Deciding if a claim is right or wrong** | **Python** (`verifier.py`) | Must be repeatable and auditable |
+| Scores, tickets, severity, retest results | Python (`scoring.py`, `app.py`) | Anyone can recompute them by hand |
+| Visibility (mentioned? rank? framing?) on live answers | Python text rules (`evals.py`) | Same answer → same result |
+| Publishing anything, contacting anyone | **Nobody automatically.** An owner approves every public change | Governance |
+
+### Scoring (`scoring.py`)
 
 | Metric | Formula |
 |---|---|
-| Visibility | average over visibility questions of `(1 / rank) × framing` · framing: recommended 1.0, neutral 0.6, negative 0.2, absent 0 |
-| Inclusion rate | % of visibility answers that mention the business |
-| Accuracy | `1 − Σ severity(wrong) / Σ severity(verifiable)` · severity: price 3, policy 3, availability 2, hours 2, address 2 · unverifiable claims never count as errors |
-| Hallucination rate | % of stress answers that assert something unsupported or wrong (abstaining = safe) |
-| **AI Trust Score** | `0.40·Accuracy + 0.35·Visibility + 0.25·(100 − Hallucination rate)` (renormalized if a part is missing) |
+| Visibility | average over local-search questions of `(1 / rank) × framing`; framing: recommended 1.0, neutral 0.6, negative 0.2, not mentioned 0 |
+| Inclusion rate | % of local-search answers that mention the business |
+| Accuracy | `1 − Σ severity(wrong) / Σ severity(checkable)`; severity: price 3, policy 3, availability 2, hours 2, address 2. `UNVERIFIABLE` and `NEEDS_REVIEW` claims never count |
+| Made-up rate | % of trick questions where the AI contradicts an approved fact or confidently says "yes" to an offer that isn't in the approved facts. "I'm not sure" is safe; an uncheckable claim is not counted as made up |
+| **AI health score** | `0.40·Accuracy + 0.35·Visibility + 0.25·(100 − Made-up rate)`. Requires accuracy and visibility data; if only the trick-question part is missing, the other weights are rescaled |
 
-### Two evals
-1. **Assistant eval**: grades the AI assistant on a fixed question set, so runs are comparable over time.
-2. **Extractor eval** (`POST /api/evals/extractor`): grades *our own* Gemini extractor against hand-labeled answers (precision, recall, exact match).
+**Honesty about the score.** The AI health score is **our internal composite for tracking one business over time**, not a validated industry index. The weights are a product decision, so the three parts are always shown next to it. A question the AI service failed to answer (quota, outage) is **excluded** from every score. A check where nothing could be answered is saved as *failed* and never replaces the last real result.
 
----
+### Ticket severity
+
+| Severity | When |
+|---|---|
+| Critical | AI says the business is closed when it is open |
+| High | Wrong price, hours, address or policy |
+| Medium | Wrong item availability (e.g. "bacalaítos aren't on the menu"); a suspected made-up offer (a person confirms) |
+| Low | Anything else |
+
+## Governance and accountability
+
+- **Automatic:** asking the questions, extracting and verifying claims, opening and updating tickets, drafting fixes, and marking an approved ticket *verified* when a re-check gets the fact right.
+- **Needs the owner's approval:** any change to a website or listing, anything about prices, policies or legal terms, contacting a third party, publishing AI-drafted text, and changing the approved facts. In this MVP, approval **records a decision**; nothing is published or emailed.
+- **Never:** fake or incentivized reviews, hidden text or prompt tricks aimed at AI, disparaging competitors, calling a fix successful before a re-check shows it, or calling something *wrong* when we simply can't verify it.
+- **Accountable:**
+  - The business owner owns the approved facts and approves public changes.
+  - The Proof Flower analyst owns the question set and the checker. As a process, they spot-check extractor output weekly and re-run **Test our own checker** after any prompt or model change.
+  - Every decision is written to the audit log with a timestamp.
+- **If our extractor is wrong:** a claim without a verbatim quote, or about an unknown product or field, is rejected and no ticket is created. An ambiguous value goes to `NEEDS_REVIEW`, never `INCORRECT`. Every ticket shows the AI's exact words so a person can catch a bad extraction before approving. The owner can mark it **Not an issue**, and the same fact will not reopen it.
+- **Correlation, not causation:** a re-check that gets a fact right shows the AI's answer changed, not that our fix caused it. The audit log records it as *"retest observed, no causal claim"*.
+
+## How this differs from GEO-monitoring tools (e.g. Peec AI)
+
+Peec AI and similar tools measure *brand visibility and share of voice* for marketing teams. Proof Flower is built around **evidence-backed factual verification**:
+
+- It compares each claim against the owner's approved, sourced facts, with deterministic code.
+- It turns each wrong fact into a correction ticket with evidence and a next step.
+- A person approves every correction.
+- It re-tests the exact same question to prove whether the correction worked.
+
+It is written for a non-technical owner (plain language, Spanish), and priced for small businesses rather than agencies.
 
 ## Tech stack
 
-Python 3.12 · FastAPI · Pydantic · SQLite · Google Gemini (`google-genai`, Google Search grounding) · Requests + BeautifulSoup (site audit) · vanilla HTML/JS/CSS front end · pytest (19 tests) · Docker / Render.
+Python 3.12 · FastAPI · Pydantic v2 · SQLite · Google Gemini (`google-genai`, Google Search grounding) · Requests + BeautifulSoup (website audit) · vanilla HTML/CSS/JS (no build step) · pytest (40 tests) · Docker · Render.
 
 | File | Role |
 |---|---|
-| `app.py` | API, ETL pipeline, eval runner, tickets, report, demo seeding |
-| `scoring.py` | All score formulas (pure functions) |
-| `evals.py` | Locked eval sets, mock assistant, live visibility parser, extractor metrics |
-| `geo.py` | Real website audit (robots.txt AI-crawler check, schema.org, FAQ, llms.txt) + GEO rules + drafts |
-| `ai.py` / `models.py` | Gemini question generation & claim extraction, strict schemas |
-| `verifier.py` | Deterministic fact comparison |
-| `static/audit.html` | Owner dashboard (home page, EN/ES) · `static/index.html` = analyst console (`/console`) |
-| `data/casa_coqui/` | Showcase catalog, locked question set, baseline & re-test answers, site profile |
-
----
+| `app.py` | API, pipeline (`process_answer`), check runner, tickets, report, demo seeding, CSV business setup |
+| `verifier.py` | Deterministic normalization and comparison (prices, availability, hours, addresses, policies) |
+| `scoring.py` | Every score formula (pure functions) |
+| `evals.py` | Locked question sets, demo answers, live visibility parser, extractor precision/recall |
+| `ai.py` / `models.py` | Gemini question drafting and claim extraction; strict schemas and guardrails |
+| `geo.py` | Real website audit (robots.txt AI crawlers, schema.org, FAQ, menu format, llms.txt) with SSRF-safe fetching, GEO rules, drafts |
+| `static/audit.html` | Owner dashboard (EN/ES). `static/index.html` is the technical view at `/console` |
+| `data/casa_coqui/` | Synthetic showcase: approved facts, 20 locked questions, Week 1 and Week 3 answers, website signals |
+| `tests/` | 40 tests, including governance rules (`tests/test_governance.py`) |
 
 ## Run it
 
 **Hosted:** open the live link above.
 
-**Locally (macOS/Linux):**
+**Locally (macOS / Linux, Python 3.10+):**
 ```bash
-./run.sh            # creates .venv, installs, starts http://127.0.0.1:8000
+./run.sh            # creates .venv, installs, starts http://127.0.0.1:8000, prints a health check
 ./run.sh docker     # or build and run the container
 ```
-The demo works **without** an API key. For live mode, put your key in `.env` (`GEMINI_API_KEY=...`). Never commit `.env`.
+The demo works **without** an API key. For live checks, copy `.env.example` to `.env` and set `GEMINI_API_KEY`. Never commit `.env`; `.gitignore` and `.dockerignore` exclude it.
 
-**Tests:** `source .venv/bin/activate && pytest -q`
+**Deploy (Render):** New → Blueprint → this repo (`render.yaml`) → set `GEMINI_API_KEY` as a secret. The app seeds the showcase on start, so the hosted page is never empty.
 
-**Deploy (Render, free):** New → Blueprint → select this repo (uses `render.yaml`) → set `GEMINI_API_KEY` as a secret env var. The app seeds the showcase on startup, so the hosted report is never empty.
+### Environment variables
 
----
+| Variable | Default | Purpose |
+|---|---|---|
+| `GEMINI_API_KEY` | *(empty)* | Enables live checks, question drafting, AI-written drafts and the extractor eval |
+| `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Model for extraction, drafting and (by default) shopping |
+| `GEMINI_SHOPPER_MODEL` | same as above | Optional separate model for the mystery shopper |
+| `GEMINI_SEARCH_FALLBACK` | `1` | If the key has no Google Search quota, ask without web search and label the answer; `0` to fail instead |
+| `LIVE_EVAL_DELAY` | `4` | Seconds between live calls (free-tier rate limits) |
+| `SHOPPER_LOCATION` | `Paterson, NJ` | Default location for drafted local-search questions |
+| `PROOF_FLOWER_DB` | `./proof_flower.sqlite3` | SQLite path (`/tmp/...` on Render) |
+| `PROOF_FLOWER_SEED` | `1` | Load the Casa Coquí showcase on start |
 
-## Governance & accountability
+### Tests
 
-- **Automatic:** run evals, extract/verify claims, open/update tickets, draft fixes, mark tickets verified on a passing re-test.
-- **Needs approval:** public website/listing changes, anything about price/policy/legal, contacting third parties, publishing AI drafts, changing the verified catalog.
-- **Never:** fake or incentivized reviews, hidden text or prompt tricks aimed at AI, disparaging competitors, treating an unlisted item as unavailable, claiming a fix *caused* an AI change.
-- **Accountable:** the business owner owns the verified catalog and approves public changes; the Proof Flower analyst owns the eval set and spot-checks 5% of extractor verdicts weekly; every decision is logged in the audit trail.
-- **Scaling:** risk-based cadence (top sellers and price/policy facts daily, the rest weekly); each new AI assistant is another "shopper" behind the same eval set.
+```bash
+source .venv/bin/activate && pytest -q      # 40 passed; tests never call the real Gemini API
+```
+They cover:
+- **Verdicts:** correct claim → no ticket; wrong claim → ticket; unverifiable → no accusation; ambiguous → needs review.
+- **Guardrails:** invented quote or product → rejected.
+- **Normalization:** price and availability parsing; an address without a ZIP is not called wrong.
+- **Visibility:** ranking in lists and in prose.
+- **Trick questions:** made-up classification ("unknown" is not "made up").
+- **Ticket lifecycle:**
+  - one ticket per wrong fact, even in new words;
+  - approve and reject;
+  - a re-check that is still wrong keeps the ticket open;
+  - a re-check that passes marks it verified.
+- **Failures:** quota stops a live check without scoring it or leaking provider text; search-quota fallback; the demo works with no key.
+- **Security:** unsafe business IDs are rejected.
 
-More detail: `docs/MVP_NOTES.md`, `docs/CONNECT_GEMINI.md`, `docs/HOW_TO_EXTEND.md`.
+## Limitations (stated plainly)
+
+- **The showcase is synthetic.** Real results come only from live checks on a business you add.
+- **One live assistant.** Live checks use Gemini's API with Google Search. That is not identical to what a consumer sees in the Gemini or ChatGPT apps. An OpenAI path exists in the technical view (`/api/run-live`, needs `OPENAI_API_KEY`). If Google Search quota is exhausted, answers come from the model without web search and are labeled.
+- **Heuristic visibility.** The rank in prose answers is a text heuristic (lists are exact), and framing uses keyword rules.
+- **Rule-based normalization.** Hours with different times on different days, price ranges and unfamiliar policy wording go to `NEEDS_REVIEW` instead of being guessed.
+- **No login.** Anyone with the link can reset the demo or add a business. Production needs accounts and role-based approval.
+- **Ephemeral storage.** SQLite on Render's free tier resets when the service restarts. All visitors share one demo state.
+- **Spot checks are a process.** The weekly extractor spot check and risk-based cadence (daily for prices and policies) are designed but not automated.
+
+## From MVP to production
+
+- **Storage and accounts:** Postgres, accounts with owner and analyst roles, and approvals signed per user.
+- **Scheduling and more assistants:** a scheduled job runner (weekly, and daily for price and policy facts). More assistants (ChatGPT, Perplexity, Claude, Copilot) plug in as extra "shoppers" behind the same question set and verifier.
+- **Evidence and connections:** evidence snapshots of cited pages, plus Google Business Profile and menu connectors to keep approved facts current.
+- **Quality monitoring:** extractor quality tracked per model version, with an alert when precision or recall drops.

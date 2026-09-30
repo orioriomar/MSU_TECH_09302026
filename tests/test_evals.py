@@ -50,6 +50,12 @@ def test_baseline_then_retest_improves_and_keeps_unfixed_ticket_open(client):
     after = client.post('/api/evals/run', json={'business_id': 'casa_coqui', 'mode': 'mock_after'}).json()
     cmp = client.get(f"/api/evals/compare/{base['id']}/{after['id']}").json()
     assert cmp['delta']['health'] > 0 and cmp['delta']['hallucination_rate'] < 0
+    # The numbers quoted in the README are exactly what the code computes.
+    b, a2 = cmp['before']['scores'], cmp['after']['scores']
+    assert (round(b['health']), round(a2['health'])) == (23, 72)
+    assert (b['visibility']['mentioned'], a2['visibility']['mentioned'], a2['visibility']['questions']) == (2, 5, 6)
+    assert (b['accuracy']['correct'], a2['accuracy']['correct'], b['accuracy']['correct'] + b['accuracy']['incorrect']) == (4, 10, 12)
+    assert (b['hallucination']['hallucinated'], a2['hallucination']['hallucinated']) == (3, 1)
     ts = client.get('/api/report/casa_coqui').json()['tickets']
     assert any(t['title'] == 'Mofongo: price (lunch) discrepancy' and t['status'] == 'verified' for t in ts)
     # Approved but the AI still repeats it -> ticket stays open, occurrence counted
