@@ -3,6 +3,7 @@
 **Proof Flower checks what AI assistants tell customers about a small business, proves which facts are wrong against the owner's approved facts, turns each wrong fact into a correction ticket the owner approves, and re-asks the same questions to show whether the fix worked.**
 
 Montclair State University · HSI Battle of the Brains 2026 · *"The New Front Door: Trustworthy AI Product Discovery"*
+Esperanza Baquedano, Maximus Maurice-Okite, Omar Khattab, Kimberly Escate, Jose Acevedo, Abel Molina, Alison Ramos, Grace Velazquez
 
 > **Live app: https://msu-tech-09302026.onrender.com**: opens straight into a complete demo. No login and no API key needed.
 > The first load after a period of inactivity can take about a minute, because the free hosting plan sleeps.
