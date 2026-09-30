@@ -160,14 +160,9 @@ def home():
     """This serves the owner dashboard (the home page)."""
     return FileResponse(BASE/'static/audit.html')
 
-@app.get('/console')
-def console():
-    """This serves the older analyst console at /console for technical users and judges."""
-    return FileResponse(BASE/'static/index.html')
-
 @app.get('/api/status')
 def status():
-    """This reports which AI provider is set up (shown in the analyst console sidebar)."""
+    """This reports which AI provider is set up (for troubleshooting)."""
     try:
         resp=requests.get(f'{OLLAMA_URL.rstrip("/")}/api/tags',timeout=1.5)
         ollama=resp.ok
@@ -191,7 +186,7 @@ class CatalogCSV(BaseModel):
     csv_text:str=Field(min_length=20,max_length=250000)
 @app.post('/api/catalog/import')
 def import_catalog(payload: CatalogCSV):
-    """This imports a business's fact spreadsheet uploaded from the analyst console."""
+    """This imports a business's fact spreadsheet sent to the API (the dashboard uses /api/business/setup instead)."""
     try:
         table=list(csv.DictReader(io.StringIO(payload.csv_text)))
         with LOCK,conn() as c:
@@ -206,7 +201,7 @@ def questions():
 
 @app.post('/api/questions')
 def add_question(payload: NewQuestion):
-    """This adds one question written by hand in the analyst console."""
+    """This adds one question written by hand, through the API."""
     with LOCK,conn() as c:
         if not c.execute('SELECT 1 FROM facts WHERE business_id=? LIMIT 1',(payload.business_id,)).fetchone():
             raise HTTPException(404,'Business not found; import its catalog first.')
@@ -381,7 +376,7 @@ def submit_answer(payload:AnswerSubmission):
 
 @app.post('/api/demo')
 def run_demo():
-    """This loads the original bakery demo answers (analyst console only)."""
+    """This loads the original bakery demo answers (kept for the automated tests)."""
     with conn() as c:
         if c.execute("SELECT COUNT(*) FROM runs WHERE mode='demo'").fetchone()[0]:
             raise HTTPException(409,'Demo already loaded. Reset the demo or inspect its existing tickets.')
@@ -498,7 +493,7 @@ def run_live(payload:LiveRequest):
 
 @app.get('/api/dashboard')
 def dashboard():
-    """This returns the data for the older analyst console: counts, answers and tickets."""
+    """This returns the data as a raw summary for troubleshooting: counts, answers and tickets."""
     with conn() as c:
         runs=rows(c,'''SELECT r.*,q.text AS question_text,q.type AS question_type
                        FROM runs r JOIN questions q ON q.id=r.question_id ORDER BY r.id DESC LIMIT 250''')

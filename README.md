@@ -48,8 +48,6 @@ The home page is written for a business owner (English / Español toggle, top ri
 6. **Questions** shows all 20 questions, the AI's exact answers, and what changed since Week 1.
 7. **Our promise** covers what is automatic, what needs approval, what we never do, and how the score works, including **Test our own checker** (precision / recall of our extractor against hand-labeled answers; needs a Gemini key).
 
-**Technical view:** `/console` (catalog import, question editing, paste-an-answer pipeline, raw tickets and audit log).
-
 **Try a real business:** **+ Add a business** → download the template → fill it in → upload → **Run a live check with Gemini** (needs `GEMINI_API_KEY`).
 
 ### Showcase results (synthetic, recomputed by the code on every start)
@@ -165,7 +163,7 @@ Python 3.12 · FastAPI · Pydantic v2 · SQLite · Google Gemini (`google-genai`
 | `evals.py` | Locked question sets, demo answers, live visibility parser, extractor precision/recall |
 | `ai.py` / `models.py` | Gemini question drafting and claim extraction; strict schemas and guardrails |
 | `geo.py` | Real website audit (robots.txt AI crawlers, schema.org, FAQ, menu format, llms.txt) with SSRF-safe fetching, GEO rules, drafts |
-| `static/audit.html` | Owner dashboard (EN/ES). `static/index.html` is the technical view at `/console` |
+| `static/audit.html` | The dashboard (EN/ES): the only page, served at `/` |
 | `data/casa_coqui/` | Synthetic showcase: approved facts, 20 locked questions, Week 1 and Week 3 answers, website signals |
 | `tests/` | 40 tests, including governance rules (`tests/test_governance.py`) |
 
@@ -217,7 +215,7 @@ They cover:
 ## Limitations (stated plainly)
 
 - **The showcase is synthetic.** Real results come only from live checks on a business you add.
-- **One live assistant.** Live checks use Gemini's API with Google Search. That is not identical to what a consumer sees in the Gemini or ChatGPT apps. An OpenAI path exists in the technical view (`/api/run-live`, needs `OPENAI_API_KEY`). If Google Search quota is exhausted, answers come from the model without web search and are labeled.
+- **One live assistant.** Live checks use Gemini's API with Google Search. That is not identical to what a consumer sees in the Gemini or ChatGPT apps. An OpenAI API route exists (`/api/run-live`, needs `OPENAI_API_KEY`) but is not in the dashboard. If Google Search quota is exhausted, answers come from the model without web search and are labeled.
 - **Heuristic visibility.** The rank in prose answers is a text heuristic (lists are exact), and framing uses keyword rules.
 - **Rule-based normalization.** Hours with different times on different days, price ranges and unfamiliar policy wording go to `NEEDS_REVIEW` instead of being guessed.
 - **No login.** Anyone with the link can reset the demo or add a business. Production needs accounts and role-based approval.
