@@ -11,7 +11,7 @@ Esperanza Baquedano, Maximus Maurice-Okite, Omar Khattab, Kimberly Escate, Jose 
 
 ---
 
-## The problem
+## The Problem
 
 Customers now ask ChatGPT, Gemini or Perplexity *"where should I eat?"* and act on a short answer. A small business can lose that customer in two ways, and never find out:
 
@@ -37,7 +37,7 @@ Customers now ask ChatGPT, Gemini or Perplexity *"where should I eat?"* and act 
 
 **Principle:** AI handles language, deterministic code decides what is true, and people approve anything consequential.
 
-## What the judge should look at 
+## Walkthrough Demo
 
 The home page is written for a business owner (English / Español toggle, top right). The demo business, **Casa Coquí Café, is fictional and labeled "Sample data" on every screen**.
 
@@ -213,7 +213,7 @@ They cover:
 - **Failures:** quota stops a live check without scoring it or leaking provider text; search-quota fallback; the demo works with no key.
 - **Security:** unsafe business IDs are rejected.
 
-## Limitations (stated plainly)
+## Limitations
 
 - **The showcase is synthetic.** Real results come only from live checks on a business you add.
 - **One live assistant.** Live checks use Gemini's API with Google Search. That is not identical to what a consumer sees in the Gemini or ChatGPT apps. An OpenAI API route exists (`/api/run-live`, needs `OPENAI_API_KEY`) but is not in the dashboard. If Google Search quota is exhausted, answers come from the model without web search and are labeled.
