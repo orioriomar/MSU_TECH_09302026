@@ -11,17 +11,46 @@ Esperanza Baquedano, Maximus Maurice-Okite, Omar Khattab, Kimberly Escate, Jose 
 
 ## How to Run
 
-**Hosted:** https://msu-tech-09302026.onrender.com
+**Hosted:** Open the live link above. No installation is required.
 
-**Locally (macOS / Linux, Python 3.10+):**
+### macOS / Linux
+
+1. Download and unzip the project.
+2. Open Terminal in the project folder.
+3. Run:
+
 ```bash
-./run.sh            # creates .venv, installs, starts http://127.0.0.1:8000, prints a health check
-./run.sh docker     # or build and run the container
+./run.sh
 ```
-The demo works **without** an API key. For live checks, copy `.env.example` to `.env` and set `GEMINI_API_KEY`. Never commit `.env`; `.gitignore` and `.dockerignore` exclude it.
 
-**Deploy (Render):** New → Blueprint → this repo (`render.yaml`) → set `GEMINI_API_KEY` as a secret. The app seeds the showcase on start, so the hosted page is never empty.
+4. Open `http://127.0.0.1:8000` in your browser.
 
+### Windows
+
+1. Download and unzip the project.
+2. Open PowerShell in the project folder.
+3. Run:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m uvicorn app:app --host 127.0.0.1 --port 8000
+```
+
+4. Open `http://127.0.0.1:8000` in your browser.
+
+### Docker (Windows, macOS, or Linux)
+
+If Docker is installed, open a terminal in the project folder and run:
+
+```bash
+./run.sh docker
+```
+
+Then open `http://127.0.0.1:8000` in your browser.
+
+**Note:** The demo works without an API key. Live AI checks require a Gemini API key.
 
 ---
 
