@@ -17,7 +17,8 @@ import requests
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent / '.env')
 
-from ai import generate_questions, extract_claims, OllamaError, OLLAMA_MODEL, OLLAMA_URL, AI_PROVIDER, GEMINI_MODEL
+from ai import (generate_questions, extract_claims, AIError, OLLAMA_MODEL, OLLAMA_URL, AI_PROVIDER, GEMINI_MODEL,
+                friendly_error, is_quota_error)
 from models import (AnswerSubmission, ExtractedClaim, ClaimBatch, QuestionGenerateRequest,
                     NewQuestion, TicketDecision)
 from verifier import verify, suggested_action
@@ -115,6 +116,7 @@ def init_db():
 EXPECTED_CSV=('fact_id','business_id','business_name','product_id','product_name','field','value',
               'context','source_url','checked_at','approved','is_demo')
 VALID_FIELDS={'price_usd','availability','address','hours','policy'}
+SAFE_ID=re.compile(r'^[a-z0-9_]{1,40}$')
 
 def insert_csv_rows(c,items,seed=False,allow_demo=False):
     """This reads rows from a business's fact spreadsheet (CSV), checks every row is valid, and saves
@@ -129,6 +131,8 @@ def insert_csv_rows(c,items,seed=False,allow_demo=False):
         for k in ('fact_id','business_id','business_name','product_id','product_name','field','value'):
             if not entry[k]:raise ValueError(f'Row {i}: {k} is required.')
         if entry['field'] not in VALID_FIELDS:raise ValueError(f'Row {i}: unknown field {entry["field"]}')
+        if not SAFE_ID.match(entry['business_id']):
+            raise ValueError(f'Row {i}: business_id must use only lowercase letters, numbers and underscores (e.g. my_cafe).')
         approved=entry['approved'].lower() in ('yes','true','1')
         is_demo=entry['is_demo'].lower() in ('yes','true','1')
         if not seed and not allow_demo and is_demo:
@@ -223,7 +227,7 @@ def generated_questions(payload: QuestionGenerateRequest):
     if not ff:raise HTTPException(404,'Import business facts before generating questions.')
     brand=ff[0]['business_name']
     try: batch=generate_questions(brand,ff,counts)
-    except OllamaError as exc: raise HTTPException(503,str(exc)) from exc
+    except AIError as exc: raise HTTPException(503,str(exc)) from exc
     created=[]; skipped=0
     norm=lambda t: re.sub(r'[^a-z0-9 ]','',t.lower()).strip()
     with LOCK,conn() as c:
@@ -292,7 +296,7 @@ def process_answer(qid:str,answer:str,citations:list[str],mode:str,
         allfacts=rows(c,'SELECT * FROM facts WHERE business_id=?',(q['business_id'],))
     brand=allfacts[0]['business_name'] if allfacts else q['business_id']
     try:
-        if extraction=='ollama':
+        if extraction in ('ai','ollama'):
             batch=extract_claims(answer,q,brand,allfacts)
             extracted=[p.model_dump() for p in batch.claims]
         else:
@@ -303,9 +307,10 @@ def process_answer(qid:str,answer:str,citations:list[str],mode:str,
                 if (cl['product_id'],cl['field']) not in {(f['product_id'],f['field']) for f in allfacts}:
                     raise ValueError('The claim must match a known catalog product and field.')
         extraction_status='complete';extract_note=''
-    except (OllamaError, ValueError, Exception) as exc:
+    except Exception as exc:
         # Save the raw real answer, but never make tickets when extraction fails.
-        extracted=[];extraction_status='failed';extract_note=str(exc)[:300]
+        extracted=[];extraction_status='failed'
+        extract_note=(str(exc) if isinstance(exc,ValueError) else friendly_error(exc))[:300]
     tickets_created=[]; tickets_updated=[]; verdicts=[]; verified_retests=[]
     with LOCK,conn() as c:
         cursor=c.execute('''INSERT INTO runs(question_id,business_id,answer,citations,mode,extraction,extraction_status,extraction_note,created_at)
@@ -326,15 +331,19 @@ def process_answer(qid:str,answer:str,citations:list[str],mode:str,
                   result['verdict'],result['reason'],str(result.get('expected','')),
                   fact['fact_id'] if fact else ''))
             if result['verdict']=='INCORRECT':
+                # One ticket per wrong FACT (product + field + context), however the AI words it.
+                # A dismissed ticket is not reopened by the same fact; an approved one records that
+                # the fix has NOT worked yet (the AI still repeats the error on a later check).
                 active=c.execute('''SELECT * FROM tickets WHERE business_id=? AND product_id=? AND field=?
-                        AND context=? AND ai_value=? AND status IN ('pending','investigating','approved')
+                        AND context=? AND status IN ('pending','investigating','approved','rejected')
                         ORDER BY id DESC LIMIT 1''',
-                    (q['business_id'],cl['product_id'],cl['field'],cl['context'],result['observed'])).fetchone()
+                    (q['business_id'],cl['product_id'],cl['field'],cl['context'])).fetchone()
                 if active:
+                    action={'approved':'retest_still_wrong','rejected':'repeat_after_dismissal'}.get(active['status'],'repeat_detected')
                     c.execute('UPDATE tickets SET last_run_id=?,occurrences=occurrences+1,updated_at=? WHERE id=?',
                               (run_id,timestamp(),active['id']))
                     c.execute('INSERT INTO audit(ticket_id,action,note,created_at) VALUES (?,?,?,?)',
-                              (active['id'],'repeat_detected',f'Additional occurrence in answer #{run_id}',timestamp()))
+                              (active['id'],action,f'Answer #{run_id} said: {result["observed"]}',timestamp()))
                     tickets_updated.append(active['id'])
                 else:
                     product_name=fact['product_name']
@@ -410,7 +419,7 @@ def retry_extraction(run_id:int):
         if r['extraction_status']=='complete':raise HTTPException(409,'Answer already extracted.')
     # Rerun against original question; use new run for clean audit trail.
     return process_answer(r['question_id'],r['answer'],json.loads(r['citations']),
-                          r['mode'],'ollama')
+                          r['mode'],'ai')
 
 class LiveRequest(BaseModel):
     """This is the shape of a request to ask one question live."""
@@ -427,7 +436,7 @@ def run_live_gemini(payload: LiveRequest):
         answer,citations=ask_gemini_shopper(q['text'])
     except Exception as exc:
         raise HTTPException(502,'Live Gemini call failed. Check key, model access, Google Search grounding, network and quota.') from exc
-    return process_answer(payload.question_id,answer,citations,'live_gemini','ollama')
+    return process_answer(payload.question_id,answer,citations,'live_gemini','ai')
 
 def ask_gemini_shopper(question_text:str)->tuple[str,list[str]]:
     """This is the AI Mystery Shopper. It asks Gemini a question with Google Search turned on,
@@ -478,7 +487,7 @@ def run_live(payload:LiveRequest):
                         if u and u not in citations:citations.append(u)
     except Exception as exc:
         raise HTTPException(502,'Live OpenAI call failed. Check API key, billing, model and web-search access.') from exc
-    return process_answer(payload.question_id,answer,citations,'live_openai','ollama')
+    return process_answer(payload.question_id,answer,citations,'live_openai','ai')
 
 @app.get('/api/dashboard')
 def dashboard():
@@ -615,7 +624,7 @@ def load_business(business_id:str):
     if es:
         cat=evals.business_dir(business_id)/'catalog.csv'
         with LOCK,conn() as c:
-            if cat.exists() and not c.execute('SELECT COUNT(*) FROM facts WHERE business_id=?',(business_id,)).fetchone()[0]:
+            if cat.exists():   # the showcase catalog file is the source of truth: re-sync it every time
                 with cat.open(newline='',encoding='utf-8-sig') as f:
                     insert_csv_rows(c,list(csv.DictReader(f)),seed=True)
             for q in es['questions']:
@@ -666,10 +675,13 @@ def run_one(q:dict, mode:str, mock:dict|None, brand:str)->dict:
             answer,cites=item['answer'],item.get('citations',[])
         else:
             answer,cites=ask_gemini_shopper(q['text'])
-            out=process_answer(q['id'],answer,cites,'live_gemini','ollama' if q['type']!='visibility' else 'manual',[])
-            vis=evals.parse_visibility(answer,brand) if q['type']=='visibility' else None
+            out=process_answer(q['id'],answer,cites,'live_gemini','ai' if q['type']!='visibility' else 'manual',[])
+            vis=evals.parse_visibility(answer,brand,q['text']) if q['type']=='visibility' else None
             abstained=evals.detect_abstention(answer)
-            unsupported=q['type']=='stress' and not abstained and evals.detect_affirmation(answer)
+            # A confident "yes" to a trick question is only "made up" if nothing in the answer
+            # was confirmed against an approved fact.
+            confirmed=any(c['verdict']=='CORRECT' for c in claims_for_run(out['run_id']))
+            unsupported=q['type']=='stress' and not abstained and not confirmed and evals.detect_affirmation(answer)
         r.update(answer=answer,citations=cites,run_id=out['run_id'],extraction=out['extraction_status'],
                  extraction_note=out['extraction_note'],claims=claims_for_run(out['run_id']),visibility=vis,
                  unsupported=unsupported,abstained=abstained,tickets_created=out['tickets_created'],
@@ -677,7 +689,8 @@ def run_one(q:dict, mode:str, mock:dict|None, brand:str)->dict:
                  tickets=out['tickets_created']+out['tickets_updated'])
     except HTTPException: raise
     except Exception as exc:
-        r['error']=str(exc)[:200]
+        print('LIVE CHECK ERROR:', q['id'], exc)   # full detail in the server log only
+        r['error']=friendly_error(exc); r['quota']=is_quota_error(exc)
     r['outcome']=scoring.question_outcome(r)
     flag_invention(q,r,brand)
     return r
@@ -707,8 +720,8 @@ def flag_invention(q:dict, r:dict, biz:str):
                     fact_id,source_url,title,proposal,priority,status,created_at,updated_at,first_run_id,last_run_id)
                     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
                     (bid,'business',biz,'invented',q['id'],said,'Not in your approved facts','',
-                     (r.get('citations') or [''])[0],f'{biz}: made-up claim',
-                     'Confirm this is not true. If it is not, answer it clearly on your website (FAQ) so AI stops repeating it.',
+                     (r.get('citations') or [''])[0],f'{biz}: possible made-up claim',
+                     'Confirm this is not something you offer. If it is not, answer the question clearly on your website (FAQ) so AI stops repeating it. If it IS true, add it to your approved facts and dismiss this ticket.',
                      'medium','pending',now,now,r['run_id'],r['run_id']))
                 r['tickets_created']=r.get('tickets_created',[])+[cur.lastrowid]
         elif open_t and open_t['status']=='approved':
@@ -736,13 +749,14 @@ def run_eval(business_id:str, mode:str, label:str='', limit:int=40)->dict:
         results.append(run_one(q,mode,mock,brand))
         if not mock: time.sleep(float(os.getenv('LIVE_EVAL_DELAY','4')))
     card=scoring.scorecard(results); synthetic=1 if mock else 0
+    status='done' if card['answered'] else 'failed'
     with LOCK,conn() as c:
         cur=c.execute('''INSERT INTO eval_runs(business_id,label,mode,eval_version,synthetic,scores,results,created_at,status)
-                         VALUES (?,?,?,?,?,?,?,?,'done')''',
+                         VALUES (?,?,?,?,?,?,?,?,?)''',
             (business_id,label or (mock or {}).get('label') or 'Live check',mode,es['version'],synthetic,
-             json.dumps(card),json.dumps(results),timestamp()))
+             json.dumps(card),json.dumps(results),timestamp(),status))
         eid=cur.lastrowid
-    return {'id':eid,'business_id':business_id,'mode':mode,'synthetic':bool(synthetic),'scores':card,'results':results}
+    return {'id':eid,'business_id':business_id,'mode':mode,'synthetic':bool(synthetic),'status':status,'scores':card,'results':results}
 
 class EvalStartRequest(BaseModel):
     """This is the shape of a request to start a step-by-step check."""
@@ -783,20 +797,26 @@ def api_eval_step(eid:int):
     if not mock and results:
         time.sleep(float(os.getenv('LIVE_EVAL_DELAY','4')))   # pace live calls to stay under Gemini's free-tier limit
     r=run_one(q,run['mode'],mock,get_profile(run['business_id']).get('business_name',run['business_id']))
-    results.append(r); done=len(results)>=len(plan)
+    results.append(r)
+    # If Gemini's quota is used up, every remaining question would fail too: stop now instead of
+    # making the owner wait, and keep the previous check as the latest real result.
+    aborted='quota' if r.get('quota') else None
+    done=len(results)>=len(plan) or bool(aborted)
+    card=scoring.scorecard(results) if done else None
     with LOCK,conn() as c:
         if done:
-            card=scoring.scorecard(results)
-            c.execute("UPDATE eval_runs SET results=?,scores=?,status='done' WHERE id=?",(json.dumps(results),json.dumps(card),eid))
+            status='done' if card['answered'] and not aborted else 'failed'
+            c.execute("UPDATE eval_runs SET results=?,scores=?,status=? WHERE id=?",(json.dumps(results),json.dumps(card),status,eid))
         else:
             c.execute('UPDATE eval_runs SET results=? WHERE id=?',(json.dumps(results),eid))
         ids=r.get('tickets_created',[])+r.get('tickets_updated',[])+r.get('tickets_verified',[])
         tk=rows(c,f"SELECT id,title,priority,status,product_id,product_name,field,context,ai_value,verified_value FROM tickets WHERE id IN ({','.join('?'*len(ids))})",ids) if ids else []
     for t in tk:
-        t['event']='created' if t['id'] in r.get('tickets_created',[]) else 'fixed' if t['id'] in r.get('tickets_verified',[]) else 'repeat'
+        t['event']=('created' if t['id'] in r.get('tickets_created',[]) else 'fixed' if t['id'] in r.get('tickets_verified',[])
+                    else 'still_wrong' if t['status']=='approved' else 'repeat')
         t['new']=t['event']=='created'
     return {'id':eid,'index':len(results),'total':len(plan),'done':done,'result':r,'tickets':tk,
-            'scores':scoring.scorecard(results) if done else None}
+            'aborted':aborted,'scores':card}
 
 @app.post('/api/evals/run')
 def api_run_eval(payload:EvalRunRequest):
@@ -942,14 +962,22 @@ def api_report(business_id:str):
         audit=rows(c,f"SELECT * FROM audit WHERE ticket_id IN ({','.join('?'*len(tids))}) ORDER BY id DESC",tids) if tids else []
         runs=rows(c,'SELECT id,question_id,answer,citations,mode FROM runs WHERE business_id=?',(business_id,))
         qtext={q['id']:q['text'] for q in rows(c,'SELECT id,text FROM questions WHERE business_id=?',(business_id,))}
+        quotes={(x['run_id'],x['product_id'],x['field'],x['context']):x['quote'] for x in rows(c,
+                "SELECT cl.run_id,cl.product_id,cl.field,cl.context,cl.quote FROM claims cl JOIN runs r ON r.id=cl.run_id WHERE r.business_id=? AND cl.verdict='INCORRECT'",(business_id,))}
+        checked={f['fact_id']:f['checked_at'] for f in rows(c,'SELECT fact_id,checked_at FROM facts WHERE business_id=?',(business_id,))}
     run_map={r['id']:r for r in runs}
     for t in tickets:
-        first=run_map.get(t['first_run_id'],{})
+        first=run_map.get(t['first_run_id'],{}); last=run_map.get(t['last_run_id'],first)
         t['evidence_answer']=first.get('answer',''); t['evidence_citations']=json.loads(first.get('citations','[]') or '[]')
+        t['evidence_quote']=quotes.get((t['first_run_id'],t['product_id'],t['field'],t['context']),'')
+        t['latest_answer']=last.get('answer','')
         t['question_id']=first.get('question_id',''); t['question_text']=qtext.get(t['question_id'],'')
+        t['fact_checked_at']=checked.get(t['fact_id'],'')
+        acts=[a['action'] for a in audit if a['ticket_id']==t['id']]   # newest first
+        t['still_wrong']=t['status']=='approved' and bool(acts) and acts[0]=='retest_still_wrong'
     return {'business_id':business_id,'evals':ev,
             'delta':scoring.compare(ev[0]['scores'],ev[1]['scores']) if len(ev)==2 else None,
-            'tickets':tickets,'audit':audit[:30],'weights':{'severity':scoring.SEVERITY,'framing':scoring.FRAMING,'trust':scoring.TRUST_WEIGHTS}}
+            'tickets':tickets,'audit':audit[:30],'weights':{'severity':scoring.SEVERITY,'framing':scoring.FRAMING,'health':scoring.HEALTH_WEIGHTS}}
 
 @app.post('/api/evals/reset/{business_id}')
 def api_reset_business(business_id:str):
@@ -1119,6 +1147,7 @@ def api_business_setup(payload:BusinessSetup):
         raise HTTPException(400,f'Every row needs the same business_id. Found: {found}.')
     bid=next(iter(ids))
     if bid=='casa_coqui': raise HTTPException(400,'That ID belongs to the demo business. Use a different business_id.')
+    if not SAFE_ID.match(bid): raise HTTPException(400,'business_id must use only lowercase letters, numbers and underscores (e.g. my_cafe).')
     try:
         with LOCK,conn() as c:
             insert_csv_rows(c,items,allow_demo=True)
@@ -1149,7 +1178,7 @@ def api_business_setup(payload:BusinessSetup):
                                   'type':q.type,'text':q.text,'product_id':q.product_id if q.type=='stress' else '',
                                   'target_field':q.target_field if q.type=='stress' else '','context':''})
                 source='gemini'
-        except OllamaError:
+        except AIError:
             pass
     version=f'{bid}-v{datetime.now().strftime("%m%d%H%M")}'
     with LOCK,conn() as c:

@@ -29,36 +29,42 @@ def test_scoring_formulas_by_hand():
     assert card['visibility']['inclusion_rate'] == 66.7
     assert card['accuracy']['score'] == 40.0          # 1 - 3/(3+2); unverifiable ignored
     assert card['hallucination']['rate'] == 50.0
-    assert card['trust'] == round(0.4 * 40 + 0.35 * 43.3 + 0.25 * 50, 1)
+    assert card['health'] == round(0.4 * 40 + 0.35 * 43.3 + 0.25 * 50, 1)
 
 
-def test_trust_renormalizes_missing_parts():
-    assert scoring.trust_score(80, None, None) == 80.0
-    assert scoring.trust_score(None, None, None) is None
+def test_health_renormalizes_missing_parts():
+    assert scoring.health_score(80, None, None) == 80.0
+    assert scoring.health_score(None, None, None) is None
 
 
 def test_baseline_then_retest_improves_and_keeps_unfixed_ticket_open(client):
     base = client.post('/api/evals/run', json={'business_id': 'casa_coqui', 'mode': 'mock_baseline'}).json()
-    assert base['synthetic'] and base['scores']['questions'] == 19
+    assert base['synthetic'] and base['scores']['questions'] == 20
     tickets = client.get('/api/report/casa_coqui').json()['tickets']
-    assert len(tickets) == 8 and all(t['status'] == 'pending' for t in tickets)   # 7 wrong facts + 1 made-up claim
+    # 7 wrong facts (the DoorDash and "free delivery" answers are the SAME wrong fact -> one ticket)
+    # + 1 made-up claim
+    assert len(tickets) == 8 and all(t['status'] == 'pending' for t in tickets)
     for t in tickets:
         client.post(f"/api/tickets/{t['id']}/decision", json={'action': 'approve', 'note': 'test'})
     after = client.post('/api/evals/run', json={'business_id': 'casa_coqui', 'mode': 'mock_after'}).json()
     cmp = client.get(f"/api/evals/compare/{base['id']}/{after['id']}").json()
-    assert cmp['delta']['trust'] > 0 and cmp['delta']['hallucination_rate'] < 0
+    assert cmp['delta']['health'] > 0 and cmp['delta']['hallucination_rate'] < 0
     ts = client.get('/api/report/casa_coqui').json()['tickets']
     assert any(t['title'] == 'Mofongo: price (lunch) discrepancy' and t['status'] == 'verified' for t in ts)
     # Approved but the AI still repeats it -> ticket stays open, occurrence counted
     doordash = [t for t in ts if t['ai_value'] == 'delivery via doordash'][0]
-    assert doordash['status'] == 'approved' and doordash['occurrences'] == 2
+    assert doordash['status'] == 'approved' and doordash['still_wrong'] is True
+    assert doordash['occurrences'] == 4        # Week 1: 2 answers, Week 3: 2 answers, all one ticket
+    assert len(ts) == 8                         # no duplicate tickets were opened on the re-check
+    bac = [t for t in ts if t['product_id'] == 'bacalaitos'][0]
+    assert bac['status'] == 'verified' and bac['evidence_quote']
 
 
 def test_eval_set_is_locked_no_duplicates(client):
     client.post('/api/evals/run', json={'mode': 'mock_baseline'})
     client.post('/api/evals/run', json={'mode': 'mock_baseline'})
     qs = [q for q in client.get('/api/questions').json() if q['business_id'] == 'casa_coqui']
-    assert len(qs) == 19
+    assert len(qs) == 20
 
 
 def test_live_eval_requires_key(client, monkeypatch):
@@ -157,14 +163,14 @@ def test_csv_business_live_check_flags_problems(client, monkeypatch):
     csv_text = (Path(app.BASE) / 'data/business_TEMPLATE.csv').read_text()
     def fake_extract(system, prompt, schema):
         if 'requested_counts' in prompt:
-            raise ai.OllamaError('use templates')
+            raise ai.AIError('use templates')
         import json as _j
         ans = _j.loads(prompt)['answer']
         if '$15' in ans:
             return {'brand_mentioned': True, 'claims': [{'product_id': 'signature_dish', 'field': 'price_usd',
                     'value': '15', 'context': '', 'quote': 'costs $15'}]}
         return {'brand_mentioned': True, 'claims': []}
-    monkeypatch.setattr(ai, 'call_ollama', fake_extract)
+    monkeypatch.setattr(ai, 'call_ai', fake_extract)
     monkeypatch.setattr(app, 'ask_gemini_shopper', lambda q: ('The Signature Dish costs $15.', ['https://old.example/menu'])
                         if 'Signature Dish' in q else ("I couldn't confirm that.", []))
     setup = client.post('/api/business/setup', json={'csv_text': csv_text, 'location': 'Paterson, NJ', 'category': 'restaurant'})

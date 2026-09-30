@@ -41,7 +41,7 @@ class AnswerSubmission(StrictModel):
     question_id: str
     answer: str = Field(min_length=3, max_length=20000)
     citations: list[str] = Field(default_factory=list, max_length=15)
-    extraction: Literal['ollama', 'manual'] = 'ollama'  # ollama=legacy API label for configured AI formatter
+    extraction: Literal['ai', 'ollama', 'manual'] = 'ai'  # 'ai' = configured extractor; 'ollama' kept as a legacy alias
     manual_claims: list[ExtractedClaim] = Field(default_factory=list)
 
 class TicketDecision(StrictModel):

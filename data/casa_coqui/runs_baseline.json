@@ -5,7 +5,7 @@
   "CC-V01": {
    "answer": "Top picks for Puerto Rican food in North Jersey: 1. Borinquen Grill for classic plates, 2. Isla Kitchen for a modern take, 3. Casa Coquí Café, a small Paterson spot.",
    "citations": [
-    "https://citylistings.example/austin-caribbean"
+    "https://citylistings.example/paterson-caribbean"
    ],
    "claims": [],
    "visibility": {
@@ -240,6 +240,21 @@
      "value": "unavailable",
      "context": "",
      "quote": "appears to have permanently closed"
+    }
+   ]
+  },
+  "CC-A10": {
+   "answer": "Casa Coquí Café's menu doesn't include bacalaítos. For salt-cod fritters in Paterson, try La Placita PR instead.",
+   "citations": [
+    "https://menuaggregator.example/casa-coqui-2024"
+   ],
+   "claims": [
+    {
+     "product_id": "bacalaitos",
+     "field": "availability",
+     "value": "unavailable",
+     "context": "",
+     "quote": "menu doesn't include bacalaítos"
     }
    ]
   }

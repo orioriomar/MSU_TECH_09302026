@@ -30,7 +30,8 @@ def safe_get(url: str, max_bytes: int = 1_500_000, redirects: int = 3) -> reques
     """
     for _ in range(redirects + 1):
         u = urlparse(url)
-        if u.scheme != 'https' or not u.hostname or u.username or u.password or not _public(u.hostname):
+        if (u.scheme != 'https' or not u.hostname or u.port not in (None, 443) or u.username or u.password
+                or not _public(u.hostname)):
             return None
         try:
             r = requests.get(url, timeout=8, allow_redirects=False, stream=True, headers=UA)
@@ -325,9 +326,13 @@ def draft_content(finding: dict, facts: list[dict], business: dict) -> dict:
     by = {(f['product_id'], f['field'], f['context']): f['value'] for f in facts if f['approved']}
     fixed = None
     if fid == 'GEO-CRAWL':
-        fixed = ('Add these lines to your website\'s robots.txt file so AI search assistants can read it:\n\n'
-                 'User-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: PerplexityBot\nAllow: /\n\n'
-                 'User-agent: ChatGPT-User\nAllow: /\n\n(Remove any "Disallow: /" lines for these names.)')
+        fixed = ('Add these lines to your website\'s robots.txt file so AI assistants can read it:\n\n'
+                 '# AI search and answer assistants\n'
+                 'User-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: ChatGPT-User\nAllow: /\n\n'
+                 'User-agent: PerplexityBot\nAllow: /\n\nUser-agent: ClaudeBot\nAllow: /\n\n'
+                 '# Optional: AI model training. Your choice; blocking these does not hide you from AI search.\n'
+                 'User-agent: GPTBot\nAllow: /\n\nUser-agent: Google-Extended\nAllow: /\n\n'
+                 '(Remove any "Disallow: /" lines for these names.)')
     elif fid == 'GEO-SCHEMA':
         fixed = _schema(facts, business)
     elif fid == 'GEO-MENU':

@@ -1,4 +1,4 @@
-**Gemini v3 note:** `AI_PROVIDER=gemini` is the default; `ai.py → call_gemini()` uses the `google-genai` Python SDK. The existing `call_ollama()` name is preserved as a compatibility dispatcher. The `models.py` Pydantic classes remain the source of required output fields, and Python independently validates every model result.
+**Gemini v3 note:** `AI_PROVIDER=gemini` is the default; `ai.py → call_gemini()` uses the `google-genai` Python SDK. The existing `call_ai()` name is preserved as a compatibility dispatcher. The `models.py` Pydantic classes remain the source of required output fields, and Python independently validates every model result.
 
 # How to modify Proof Flower's two AI features
 
@@ -19,7 +19,7 @@ This is the quick reference for the teammate working on the models.
 
 ```python
 # The essential call already present in ai.py:
-raw = call_ollama(system, prompt, QuestionBatch.model_json_schema())
+raw = call_ai(system, prompt, QuestionBatch.model_json_schema())
 batch = QuestionBatch.model_validate(raw)
 ```
 
@@ -52,13 +52,13 @@ Then `verifier.py` finds the unique *approved* `(product_id, field, context)` fa
 
 ```python
 # The key call already present in ai.py:
-raw = call_ollama(system, prompt, ClaimBatch.model_json_schema())
+raw = call_ai(system, prompt, ClaimBatch.model_json_schema())
 batch = ClaimBatch.model_validate(raw)
 ```
 
 ## C. If we want a second LLM later
 
-The question generator and claim extractor both currently use `OLLAMA_MODEL`, so **one AI model is enough**. You can separately configure them later by adding `OLLAMA_QUESTION_MODEL` and `OLLAMA_EXTRACTION_MODEL` environment variables and passing a `model` argument into `call_ollama()`. No second model is needed to decide factual accuracy; in fact, an LLM should not be the sole authority for factual truth.
+The question generator and claim extractor both currently use `OLLAMA_MODEL`, so **one AI model is enough**. You can separately configure them later by adding `OLLAMA_QUESTION_MODEL` and `OLLAMA_EXTRACTION_MODEL` environment variables and passing a `model` argument into `call_ai()`. No second model is needed to decide factual accuracy; in fact, an LLM should not be the sole authority for factual truth.
 
 ## D. A safe demo when Ollama is offline
 

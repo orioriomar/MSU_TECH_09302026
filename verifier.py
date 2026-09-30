@@ -121,8 +121,10 @@ def canonical_policy(value: str, context: str):
             return 'no returns'
         n = re.search(r'\d+', v)
         return f'{n.group(0)} days' if n else None
+    # A policy type we have no rules for: only identical wording can be confirmed.
+    # Different wording is NOT treated as wrong; verify() sends it to human review.
     plain = re.sub(r'\s+', ' ', v).strip(' .')
-    return plain or None
+    return f'text:{plain}' if plain else None
 
 
 def normalize(field: str, value: str, context: str = '') -> str | None:
@@ -133,15 +135,21 @@ def normalize(field: str, value: str, context: str = '') -> str | None:
     """
     s = str(value).strip().lower()
     if field == 'price_usd':
+        # Exactly one number must be present: "$14", "14.00", "14 dollars" all become "14.00".
+        # Ranges ("$14-16") or several numbers are ambiguous, so they go to human review.
+        nums = re.findall(r'\d[\d,]*(?:\.\d+)?', s)
+        if len(nums) != 1 or re.search(r'\d\s*(-|–|to)\s*\$?\d', s):
+            return None
         try:
-            v = Decimal(s.replace('$', '').replace(',', ''))
+            v = Decimal(nums[0].replace(',', ''))
             return str(v.quantize(Decimal('0.01'))) if v >= 0 else None
         except InvalidOperation:
             return None
     if field == 'availability':
-        if s in ('available', 'yes', 'in stock', 'on menu', 'served', 'open'):
+        if s in ('available', 'yes', 'in stock', 'on menu', 'on the menu', 'served', 'open', 'open for business'):
             return 'available'
-        if s in ('unavailable', 'no', 'out of stock', 'not on menu', 'not served', 'closed', 'permanently closed'):
+        if s in ('unavailable', 'no', 'out of stock', 'not on menu', 'not on the menu', 'not served',
+                 'not available', 'discontinued', 'closed', 'permanently closed'):
             return 'unavailable'
         return None
     if field == 'hours':
@@ -151,6 +159,16 @@ def normalize(field: str, value: str, context: str = '') -> str | None:
     if field == 'policy':
         return canonical_policy(value, context)
     return re.sub(r'\s+', ' ', s).strip(' .') or None
+
+
+def same_value(field: str, observed: str, expected: str) -> bool:
+    """This compares two standardized values. For addresses the ZIP code only counts when BOTH
+    sides give one, so "118 Market St, Paterson" is not called wrong just for leaving out the ZIP.
+    """
+    if field == 'address':
+        o, e = observed.split(), expected.split()
+        return o[:2] == e[:2] and (len(o) < 3 or len(e) < 3 or o[2] == e[2])
+    return observed == expected
 
 
 def verify(claim: dict, facts: list[dict]) -> dict:
@@ -178,7 +196,9 @@ def verify(claim: dict, facts: list[dict]) -> dict:
     expected = normalize(claim['field'], fact['value'], fact['context'])
     if observed is None or expected is None:
         return {'verdict':'NEEDS_REVIEW','reason':'Value could not be safely normalized.','fact':fact}
-    verdict = 'CORRECT' if observed == expected else 'INCORRECT'
+    if claim['field'] == 'policy' and observed.startswith('text:') and observed != expected:
+        return {'verdict': 'NEEDS_REVIEW', 'reason': 'Unrecognized policy wording; a person must compare it.', 'fact': fact}
+    verdict = 'CORRECT' if same_value(claim['field'], observed, expected) else 'INCORRECT'
     # Show people the original wording for hours/address/policy; the standard form is only for comparing.
     readable = claim['field'] in ('hours', 'address', 'policy')
     return {'verdict': verdict, 'reason': 'Exact reviewed catalog comparison.', 'fact': fact,
@@ -186,11 +206,15 @@ def verify(claim: dict, facts: list[dict]) -> dict:
             'expected': str(fact['value']).strip() if readable else expected}
 
 def suggested_action(field: str) -> str:
-    """This returns the suggested next step shown on a ticket, based on what kind of fact was wrong."""
+    """This returns the plain-language next step shown on a ticket, based on what kind of fact was wrong.
+    It only suggests; nothing is changed until the owner approves.
+    """
     return {
-        'price_usd':'Inspect the cited price and ordering channel. Review official price information before any update.',
-        'availability':'Inspect cited menus/listings for outdated item availability; consider an authorized update.',
-        'address':'Inspect citations and public listings for an outdated address; prepare a reviewed correction.',
-        'hours':'Compare location- and date-specific hours; clarify public hours if necessary.',
-        'policy':'Review the cited policy against the approved business policy; prepare a clarification.'
-    }.get(field,'Review and investigate the cited information before proposing changes.')
+        'price_usd': 'Check the page the AI cited. If it shows an old price, update your menu page and '
+                     'listings (Google, Yelp, delivery apps) so they match your current price.',
+        'availability': 'Make sure this item is listed as text on your own menu page, then ask outdated '
+                        'listings to update it. AI often says an item is missing when the menu is only a PDF or photo.',
+        'address': 'Correct the address on every public listing so it matches your website exactly.',
+        'hours': 'Make your hours identical on your website, Google Business Profile and Yelp.',
+        'policy': 'Publish this policy in one clear sentence on your website (FAQ) and fix any listing that says otherwise.',
+    }.get(field, 'Review the cited information before deciding on any change.')

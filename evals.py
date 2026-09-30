@@ -3,7 +3,7 @@ answers, reads live answers to see whether the business was mentioned, and measu
 accurate our own claim extractor is.
 """
 from __future__ import annotations
-import json, re
+import json, re, unicodedata
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
@@ -55,35 +55,42 @@ def detect_abstention(answer: str) -> bool:
     return bool(ABSTAIN.search(answer or ''))
 
 
-def parse_visibility(answer: str, brand: str) -> dict:
+COMMON_WORDS = {'for', 'in', 'the', 'try', 'near', 'at', 'and', 'or', 'if', 'you', 'best', 'top', 'good',
+                'great', 'north', 'south', 'east', 'west', 'new', 'jersey', 'york', 'nj', 'ny', 'here', 'some'}
+
+
+def fold(text: str) -> str:
+    """This lowercases text and strips accents, so "Casa Coquí Café" and "casa coqui cafe" match."""
+    return ''.join(ch for ch in unicodedata.normalize('NFKD', text or '') if not unicodedata.combining(ch)).lower()
+
+
+def parse_visibility(answer: str, brand: str, question: str = '') -> dict:
     """This reads a LIVE answer and works out whether the business was mentioned, where it ranked
     in the list, and whether it was recommended, neutral or negative. It uses simple text rules
-    (not AI), so the same answer always gets the same result.
+    (not AI), so the same answer always gets the same result. The rank is a heuristic: a numbered
+    or bulleted list gives an exact position; in plain prose we count the other business names
+    that appear before ours (ignoring place and cuisine words that were already in the question).
     """
     text = answer or ''
-    low = text.lower()
-    key = brand.lower()
-    plain = key.replace('í', 'i').replace('é', 'e').replace('á', 'a').replace('ó', 'o').replace('ú', 'u')
+    low, key = fold(text), fold(brand)
     idx = low.find(key)
-    if idx < 0:
-        idx = low.replace('í', 'i').replace('é', 'e').replace('á', 'a').replace('ó', 'o').replace('ú', 'u').find(plain)
-    if idx < 0:
+    if not key or idx < 0:
         return {'mentioned': False, 'rank': None, 'framing': None}
     items = [ln for ln in text.splitlines() if re.match(r'\s*(\d+[.)]|[-*•])\s+', ln)]
     rank = None
     for i, ln in enumerate(items, 1):
-        if key in ln.lower() or plain in ln.lower():
+        if key in fold(ln):
             rank = i
             break
     if rank is None:
-        numbered = re.findall(r'(\d+)[.)]\s+([^,;\n]+)', text)
-        for n, chunk in numbered:
-            if key in chunk.lower() or plain in chunk.lower():
+        for n, chunk in re.findall(r'(\d+)[.)]\s+([^,;\n]+)', text):
+            if key in fold(chunk):
                 rank = int(n)
                 break
-    if rank is None:  # prose answer: rank by order of capitalized names before the brand
-        before = text[:idx]
-        rank = 1 + len(re.findall(r'\b[A-Z][a-zA-Z]+(?: [A-Z][a-zA-Z]+)+\b', before))
+    if rank is None:  # prose answer: rank by order of other capitalized names before the brand
+        asked = set(re.findall(r'[a-z]+', fold(question))) | COMMON_WORDS
+        names = re.findall(r'\b[A-Z][a-zA-Z]+(?: [A-Z][a-zA-Z]+)+\b', text[:idx])
+        rank = 1 + len({n for n in names if set(re.findall(r'[a-z]+', fold(n))) - asked})
     start = max(text.rfind('.', 0, idx), text.rfind('\n', 0, idx)) + 1
     end_candidates = [p for p in (text.find('.', idx), text.find('\n', idx)) if p != -1]
     sentence = text[start:min(end_candidates) if end_candidates else len(text)]

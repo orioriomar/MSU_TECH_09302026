@@ -94,7 +94,7 @@ def test_generate_and_formatter_with_stubbed_ollama(client,monkeypatch):
         return {'brand_mentioned':True,'claims':[{'product_id':'orange_cookies',
                 'field':'availability','value':'unavailable','context':'',
                 'quote':'does not sell Orange Blossom Cookies'}]}
-    monkeypatch.setattr(ai,'call_ollama',fake_call)
+    monkeypatch.setattr(ai,'call_ai',fake_call)
     g=client.post('/api/questions/generate',json={'business_id':'juniper_bakery','visibility':1,'accuracy':1,'stress':0})
     assert g.status_code==200 and g.json()['actual']==2
     qid=next(x['id'] for x in g.json()['questions'] if x['type']=='accuracy')
@@ -108,7 +108,7 @@ def test_generate_and_formatter_with_stubbed_ollama(client,monkeypatch):
 
 def test_ollama_fake_quote_rejected(client,monkeypatch):
     import ai
-    monkeypatch.setattr(ai,'call_ollama',lambda *args: {'brand_mentioned':True,
+    monkeypatch.setattr(ai,'call_ai',lambda *args: {'brand_mentioned':True,
         'claims':[{'product_id':'orange_cookies','field':'availability','value':'unavailable',
                    'context':'','quote':'an invented quote'}]})
     out=client.post('/api/answers',json={'question_id':'A001','answer':'Juniper Neighborhood Bakery sells cookies.','extraction':'ollama'})

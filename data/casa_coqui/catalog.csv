@@ -12,3 +12,4 @@ CC010,casa_coqui,Casa Coquí Café,business,Casa Coquí Café,policy,pickup only
 CC011,casa_coqui,Casa Coquí Café,business,Casa Coquí Café,policy,walk-in only,reservations,https://casacoqui.example/faq,2026-09-29,yes,yes
 CC012,casa_coqui,Casa Coquí Café,business,Casa Coquí Café,policy,20 guests,catering minimum,https://casacoqui.example/catering,2026-09-29,yes,yes
 CC013,casa_coqui,Casa Coquí Café,business,Casa Coquí Café,availability,available,,https://casacoqui.example/visit,2026-09-29,yes,yes
+CC014,casa_coqui,Casa Coquí Café,bacalaitos,Bacalaítos,availability,available,,https://casacoqui.example/menu,2026-09-29,yes,yes

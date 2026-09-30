@@ -14,11 +14,27 @@ OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.2')
 GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-3.5-flash-lite')
 AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini').lower()
 
-class OllamaError(Exception):
-    """This is the error raised whenever an AI call fails
-    (the name is left over from when the project used Ollama).
-    """
+class AIError(Exception):
+    """This is the error raised whenever an AI call fails (Gemini, or the optional local Ollama)."""
     pass
+
+
+def is_quota_error(exc: Exception) -> bool:
+    """This spots Google's "too many requests / quota used up" error (HTTP 429)."""
+    msg = str(exc)
+    return '429' in msg or 'RESOURCE_EXHAUSTED' in msg or 'quota' in msg.lower()
+
+
+def friendly_error(exc: Exception) -> str:
+    """This turns a provider error into a short message that is safe to show on the dashboard.
+    The raw provider text (which can include URLs and account details) stays in the server log only.
+    """
+    if is_quota_error(exc):
+        return 'Gemini quota reached. This question was not scored.'
+    if isinstance(exc, AIError):
+        return str(exc)[:160]
+    return 'The live AI call failed. This question was not scored.'
+
 
 def with_quota_retry(call, attempts: int = 3):
     """This retries a Gemini call when Google says we're going too fast (error 429,
@@ -44,7 +60,7 @@ def call_gemini(system: str, prompt: str, schema: dict) -> dict:
     and returns it. If the call fails, it prints the real error to the server log.
     """
     if not os.getenv('GEMINI_API_KEY'):
-        raise OllamaError('GEMINI_API_KEY is missing. Add it to .env and restart Proof Flower.')
+        raise AIError('GEMINI_API_KEY is missing. Add it to .env and restart Proof Flower.')
     try:
         from google import genai
         from google.genai import types
@@ -62,24 +78,24 @@ def call_gemini(system: str, prompt: str, schema: dict) -> dict:
             ),
         ))
         if not response.text:
-            raise OllamaError('Gemini returned no JSON. Try again or check your API quota.')
+            raise AIError('Gemini returned no JSON. Try again or check your API quota.')
         return json.loads(response.text)
-    except OllamaError:
+    except AIError:
         raise
     except Exception as exc:
         print('GEMINI ERROR:', exc)  # server log only; never shown to end users
         # We deliberately omit provider exception text; it could include URLs
         # and other details not appropriate for an end-user or shared log.
-        raise OllamaError('Gemini request failed. Check the API key, model access, network, and rate limits.') from exc
+        raise AIError('Gemini request failed. Check the API key, model access, network, and rate limits.') from exc
 
-def call_ollama(system: str, prompt: str, schema: dict) -> dict:
+def call_ai(system: str, prompt: str, schema: dict) -> dict:
     """This sends a request to whichever AI provider is set in .env
     (Gemini by default, or a local Ollama model).
     """
     if AI_PROVIDER == 'gemini':
         return call_gemini(system, prompt, schema)
     if AI_PROVIDER != 'ollama':
-        raise OllamaError('AI_PROVIDER must be gemini or ollama.')
+        raise AIError('AI_PROVIDER must be gemini or ollama.')
     try:
         response = requests.post(
             f'{OLLAMA_URL.rstrip("/")}/api/chat',
@@ -93,7 +109,7 @@ def call_ollama(system: str, prompt: str, schema: dict) -> dict:
         response.raise_for_status()
         return json.loads(response.json()['message']['content'])
     except (requests.RequestException, KeyError, ValueError) as exc:
-        raise OllamaError('Ollama is unavailable or returned invalid JSON. Run: ollama pull llama3.2; ollama serve') from exc
+        raise AIError('Ollama is unavailable or returned invalid JSON. Run: ollama pull llama3.2; ollama serve') from exc
 
 def generate_questions(business_name: str, facts: list[dict], counts: dict,
                        location: str = '', category: str = '') -> QuestionBatch:
@@ -105,7 +121,7 @@ def generate_questions(business_name: str, facts: list[dict], counts: dict,
                   'field': f['field'], 'context': f['context']}
                  for f in facts if f['approved']]
     if not available:
-        raise OllamaError('Review/approve some catalog facts before generating questions.')
+        raise AIError('Review/approve some catalog facts before generating questions.')
     needed = sum(counts.values())
     system = (
         'You generate realistic, neutral shopper questions for a small-business visibility/accuracy study. '
@@ -124,11 +140,11 @@ def generate_questions(business_name: str, facts: list[dict], counts: dict,
     prompt = json.dumps({'business': business_name, 'business_category': category,
                          'shopper_location': location or os.getenv('SHOPPER_LOCATION', ''), 'approved_fact_descriptors': available,
                          'requested_counts': counts, 'total': needed}, ensure_ascii=False)
-    raw = call_ollama(system, prompt, QuestionBatch.model_json_schema())
+    raw = call_ai(system, prompt, QuestionBatch.model_json_schema())
     try:
         batch = QuestionBatch.model_validate(raw)
     except ValidationError as exc:
-        raise OllamaError('AI question output failed the question schema. Try again.') from exc
+        raise AIError('AI question output failed the question schema. Try again.') from exc
     product_ids = {f['product_id'] for f in facts if f['approved']}
     allowed = {f['field'] for f in facts if f['approved']}
     seen, approved = set(), []
@@ -146,7 +162,7 @@ def generate_questions(business_name: str, facts: list[dict], counts: dict,
         accepted_counts[q.type] += 1
     # Never invent missing questions to satisfy requested counts.
     if not approved:
-        raise OllamaError('No usable questions after validating model output. Try again.')
+        raise AIError('No usable questions after validating model output. Try again.')
     return QuestionBatch(questions=approved[:needed])
 
 def extract_claims(answer: str, question: dict, business_name: str, facts: list[dict]) -> ClaimBatch:
@@ -172,18 +188,18 @@ def extract_claims(answer: str, question: dict, business_name: str, facts: list[
     )
     prompt = json.dumps({'question': question['text'], 'answer': answer,
                          'brand': business_name, 'product_field_descriptors': descriptors}, ensure_ascii=False)
-    raw = call_ollama(system, prompt, ClaimBatch.model_json_schema())
+    raw = call_ai(system, prompt, ClaimBatch.model_json_schema())
     try:
         batch = ClaimBatch.model_validate(raw)
     except ValidationError as exc:
-        raise OllamaError('AI extraction did not match the required schema; no tickets created.') from exc
+        raise AIError('AI extraction did not match the required schema; no tickets created.') from exc
     def squash(s):
         """This collapses extra spaces so quote matching isn't thrown off by formatting."""
         return re.sub(r'\s+', ' ', s).strip()
     allowed = {(f['product_id'],f['field']) for f in facts}
     for c in batch.claims:
         if (c.product_id,c.field) not in allowed:
-            raise OllamaError(f'Extractor invented an unknown product/field: {c.product_id}/{c.field}')
+            raise AIError(f'Extractor invented an unknown product/field: {c.product_id}/{c.field}')
         if squash(c.quote) not in squash(answer):
-            raise OllamaError('Extractor returned a quote absent from the AI answer; no tickets created.')
+            raise AIError('Extractor returned a quote absent from the AI answer; no tickets created.')
     return batch

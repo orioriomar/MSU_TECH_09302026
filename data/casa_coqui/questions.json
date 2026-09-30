@@ -1,5 +1,5 @@
 {
- "version": "casa_coqui-v2",
+ "version": "casa_coqui-v3",
  "location": "Paterson, NJ",
  "questions": [
   {
@@ -119,6 +119,14 @@
    "type": "accuracy",
    "text": "Is Casa Coquí Café still open, or did it close?",
    "product_id": "business",
+   "target_field": "availability",
+   "context": ""
+  },
+  {
+   "id": "CC-A10",
+   "type": "accuracy",
+   "text": "Does Casa Coquí Café have bacalaítos on the menu?",
+   "product_id": "bacalaitos",
    "target_field": "availability",
    "context": ""
   },

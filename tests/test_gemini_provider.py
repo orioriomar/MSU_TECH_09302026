@@ -32,13 +32,13 @@ def test_gemini_structured_output_dispatch(monkeypatch):
     monkeypatch.setitem(sys.modules,'google.genai.types',fake_types)
     monkeypatch.setenv('GEMINI_API_KEY','unit-test-key')
     monkeypatch.setattr(ai,'AI_PROVIDER','gemini')
-    assert ai.call_ollama('extract claims','answer',ClaimBatch.model_json_schema()) == {
+    assert ai.call_ai('extract claims','answer',ClaimBatch.model_json_schema()) == {
         'brand_mentioned':True,'claims':[]}
 
 def test_missing_gemini_key_is_explicit(monkeypatch):
     monkeypatch.delenv('GEMINI_API_KEY',raising=False)
     try: ai.call_gemini('instructions','text',QuestionBatch.model_json_schema())
-    except ai.OllamaError as e:
+    except ai.AIError as e:
         assert 'GEMINI_API_KEY' in str(e)
     else: raise AssertionError('Missing key should fail')
 

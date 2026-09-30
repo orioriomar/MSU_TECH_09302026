@@ -6,7 +6,7 @@
    "answer": "Top Puerto Rican restaurants in North Jersey: 1. Casa Coquí Café in Paterson, recommended for its mofongo and pernil, 2. Borinquen Grill, 3. Isla Kitchen.",
    "citations": [
     "https://casacoqui.example/",
-    "https://citylistings.example/austin-caribbean"
+    "https://citylistings.example/paterson-caribbean"
    ],
    "claims": [],
    "visibility": {
@@ -247,6 +247,21 @@
      "value": "available",
      "context": "",
      "quote": "Casa Coquí Café is open"
+    }
+   ]
+  },
+  "CC-A10": {
+   "answer": "Yes. Casa Coquí Café lists bacalaítos (salt-cod fritters) on its menu page as an appetizer.",
+   "citations": [
+    "https://casacoqui.example/menu"
+   ],
+   "claims": [
+    {
+     "product_id": "bacalaitos",
+     "field": "availability",
+     "value": "available",
+     "context": "",
+     "quote": "lists bacalaítos (salt-cod fritters) on its menu page"
     }
    ]
   }

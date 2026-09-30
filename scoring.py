@@ -11,8 +11,17 @@ SEVERITY = {'price_usd': 3, 'policy': 3, 'availability': 2, 'hours': 2, 'address
 # How the AI framed the business when it did mention it.
 FRAMING = {'recommended': 1.0, 'neutral': 0.6, 'negative': 0.2}
 
-# Weights for the combined AI Trust Score (sum to 1).
-TRUST_WEIGHTS = {'accuracy': 0.40, 'visibility': 0.35, 'reliability': 0.25}
+# Weights for the combined AI Health Score (sum to 1). This is an internal, product-defined
+# composite for tracking one business over time, not a validated industry index. The three
+# parts are always shown separately next to it.
+HEALTH_WEIGHTS = {'accuracy': 0.40, 'visibility': 0.35, 'reliability': 0.25}
+
+
+def answered(results: list[dict]) -> list[dict]:
+    """This drops questions that could not be asked (for example the AI service was down or out of
+    quota). A failed call says nothing about the business, so it never counts for or against it.
+    """
+    return [r for r in results if not r.get('error')]
 
 
 def visibility_points(vis: dict | None) -> float:
@@ -29,7 +38,7 @@ def visibility_score(results: list[dict]) -> dict:
     """This averages the local-search points into a 0-100 visibility score
     and counts how many searches mentioned the business.
     """
-    vis = [r for r in results if r['type'] == 'visibility']
+    vis = [r for r in answered(results) if r['type'] == 'visibility']
     if not vis:
         return {'score': None, 'inclusion_rate': None, 'questions': 0, 'mentioned': 0}
     mentioned = sum(1 for r in vis if (r.get('visibility') or {}).get('mentioned'))
@@ -46,7 +55,7 @@ def accuracy_score(results: list[dict]) -> dict:
     """
     total_w = wrong_w = 0
     correct = incorrect = 0
-    for r in results:
+    for r in answered(results):
         for c in r.get('claims', []):
             if c['verdict'] not in ('CORRECT', 'INCORRECT'):
                 continue  # unverifiable / needs review never count as errors
@@ -65,18 +74,21 @@ def accuracy_score(results: list[dict]) -> dict:
 
 def is_hallucination(r: dict) -> bool:
     """This decides whether a trick-question answer made something up.
-    Admitting 'I'm not sure' is always treated as safe.
+    Admitting 'I'm not sure' is always treated as safe. Only two things count as made up:
+    a confident claim that contradicts an approved fact (INCORRECT), or a confident "yes" to an
+    offer that is not in the approved facts (unsupported). A claim we simply cannot check
+    (UNVERIFIABLE / NEEDS_REVIEW) is never counted as a hallucination: unknown is not wrong.
     """
-    if r.get('abstained'):
+    if r.get('error') or r.get('abstained'):
         return False
     if r.get('unsupported'):
         return True
-    return any(c['verdict'] in ('INCORRECT', 'UNVERIFIABLE') for c in r.get('claims', []))
+    return any(c['verdict'] == 'INCORRECT' for c in r.get('claims', []))
 
 
 def hallucination_rate(results: list[dict]) -> dict:
     """This calculates the percentage of trick questions where the AI made something up."""
-    stress = [r for r in results if r['type'] == 'stress']
+    stress = [r for r in answered(results) if r['type'] == 'stress']
     if not stress:
         return {'rate': None, 'questions': 0, 'hallucinated': 0, 'abstained': 0}
     bad = sum(1 for r in stress if is_hallucination(r))
@@ -84,8 +96,8 @@ def hallucination_rate(results: list[dict]) -> dict:
             'hallucinated': bad, 'abstained': sum(1 for r in stress if r.get('abstained'))}
 
 
-def trust_score(acc: float | None, vis: float | None, hall_rate: float | None) -> float | None:
-    """This combines the parts into the AI health score:
+def health_score(acc: float | None, vis: float | None, hall_rate: float | None) -> float | None:
+    """This combines the parts into the AI Health Score:
     40% accuracy + 35% visibility + 25% not making things up.
     If a part is missing, the other weights are scaled up to fill in.
     """
@@ -94,8 +106,8 @@ def trust_score(acc: float | None, vis: float | None, hall_rate: float | None) -
     usable = {k: v for k, v in parts.items() if v is not None}
     if not usable:
         return None
-    weight = sum(TRUST_WEIGHTS[k] for k in usable)  # renormalize if a part is missing
-    return round(sum(TRUST_WEIGHTS[k] * v for k, v in usable.items()) / weight, 1)
+    weight = sum(HEALTH_WEIGHTS[k] for k in usable)  # renormalize if a part is missing
+    return round(sum(HEALTH_WEIGHTS[k] * v for k, v in usable.items()) / weight, 1)
 
 
 def question_outcome(r: dict) -> str:
@@ -122,9 +134,10 @@ def scorecard(results: list[dict]) -> dict:
     vis = visibility_score(results)
     acc = accuracy_score(results)
     hal = hallucination_rate(results)
-    return {'trust': trust_score(acc['score'], vis['score'], hal['rate']),
+    ok = answered(results)
+    return {'health': health_score(acc['score'], vis['score'], hal['rate']),
             'visibility': vis, 'accuracy': acc, 'hallucination': hal,
-            'questions': len(results)}
+            'questions': len(results), 'answered': len(ok), 'errors': len(results) - len(ok)}
 
 
 def compare(before: dict, after: dict) -> dict:
@@ -132,7 +145,7 @@ def compare(before: dict, after: dict) -> dict:
     def d(a, b):
         """This subtracts two numbers, or returns nothing if either one is missing."""
         return None if a is None or b is None else round(b - a, 1)
-    return {'trust': d(before['trust'], after['trust']),
+    return {'health': d(before.get('health', before.get('trust')), after.get('health', after.get('trust'))),
             'visibility': d(before['visibility']['score'], after['visibility']['score']),
             'inclusion_rate': d(before['visibility']['inclusion_rate'], after['visibility']['inclusion_rate']),
             'accuracy': d(before['accuracy']['score'], after['accuracy']['score']),
