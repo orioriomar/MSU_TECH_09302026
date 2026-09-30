@@ -36,7 +36,7 @@ Customers now ask ChatGPT, Gemini or Perplexity *"where should I eat?"* and act 
 
 **Principle:** AI handles language, deterministic code decides what is true, and people approve anything consequential.
 
-## What the judge should look at (3 minutes)
+## What the judge should look at 
 
 The home page is written for a business owner (English / Español toggle, top right). The demo business, **Casa Coquí Café, is fictional and labeled "Sample data" on every screen**.
 
