@@ -9,6 +9,20 @@ Esperanza Baquedano, Maximus Maurice-Okite, Omar Khattab, Kimberly Escate, Jose 
 > The first load after a period of inactivity can take about a minute, because the free hosting plan sleeps.
 > **Run it yourself:** `./run.sh` (Python) or `./run.sh docker`, then open http://127.0.0.1:8000
 
+## How to Run
+
+**Hosted:** https://msu-tech-09302026.onrender.com
+
+**Locally (macOS / Linux, Python 3.10+):**
+```bash
+./run.sh            # creates .venv, installs, starts http://127.0.0.1:8000, prints a health check
+./run.sh docker     # or build and run the container
+```
+The demo works **without** an API key. For live checks, copy `.env.example` to `.env` and set `GEMINI_API_KEY`. Never commit `.env`; `.gitignore` and `.dockerignore` exclude it.
+
+**Deploy (Render):** New → Blueprint → this repo (`render.yaml`) → set `GEMINI_API_KEY` as a secret. The app seeds the showcase on start, so the hosted page is never empty.
+
+
 ---
 
 ## The Problem
@@ -168,18 +182,6 @@ Python 3.12 · FastAPI · Pydantic v2 · SQLite · Google Gemini (`google-genai`
 | `data/casa_coqui/` | Synthetic showcase: approved facts, 20 locked questions, Week 1 and Week 3 answers, website signals |
 | `tests/` | 41 tests, including governance rules (`tests/test_governance.py`) |
 
-## Run it
-
-**Hosted:** https://msu-tech-09302026.onrender.com
-
-**Locally (macOS / Linux, Python 3.10+):**
-```bash
-./run.sh            # creates .venv, installs, starts http://127.0.0.1:8000, prints a health check
-./run.sh docker     # or build and run the container
-```
-The demo works **without** an API key. For live checks, copy `.env.example` to `.env` and set `GEMINI_API_KEY`. Never commit `.env`; `.gitignore` and `.dockerignore` exclude it.
-
-**Deploy (Render):** New → Blueprint → this repo (`render.yaml`) → set `GEMINI_API_KEY` as a secret. The app seeds the showcase on start, so the hosted page is never empty.
 
 ### Environment variables
 
