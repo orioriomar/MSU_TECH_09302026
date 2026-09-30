@@ -4,7 +4,7 @@ database, runs the weekly AI checks, creates issue tickets, and feeds the dashbo
 No endpoint edits a real website or contacts anyone; people approve every public change.
 """
 from __future__ import annotations
-import csv, io, json, os, re, sqlite3, threading, uuid
+import contextvars, csv, io, json, os, re, sqlite3, threading, uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,6 +26,7 @@ from verifier import verify, suggested_action
 BASE=Path(__file__).resolve().parent
 DB=Path(os.getenv('PROOF_FLOWER_DB', str(BASE/'proof_flower.sqlite3')))
 LOCK=threading.RLock()
+SESSION_DB=contextvars.ContextVar('session_db',default=None)   # this visitor's own demo database
 app=FastAPI(title='Proof Flower — AI Mystery Shopper',version='0.2.0')
 from fastapi.staticfiles import StaticFiles
 app.mount('/static', StaticFiles(directory=str(BASE/'static')), name='static')  # logo, icons, pages
@@ -36,9 +37,12 @@ def timestamp():
     return datetime.now(timezone.utc).isoformat(timespec='seconds')
 @contextmanager
 def conn():
-    """This opens the SQLite database, saves changes if the work succeeds, and undoes them if it fails."""
-    DB.parent.mkdir(parents=True, exist_ok=True)
-    c=sqlite3.connect(DB,timeout=15,check_same_thread=False)
+    """This opens the SQLite database, saves changes if the work succeeds, and undoes them if it fails.
+    Each visitor of the hosted demo gets their own database file (see per_visitor_db below).
+    """
+    db=SESSION_DB.get() or DB
+    db.parent.mkdir(parents=True, exist_ok=True)
+    c=sqlite3.connect(db,timeout=15,check_same_thread=False)
     c.row_factory=sqlite3.Row
     c.execute('PRAGMA foreign_keys=ON')
     try:
@@ -1018,6 +1022,49 @@ def api_replay(business_id:str):
     """This resets the demo business and replays the whole story from Week 1."""
     api_reset_business(business_id); seed_showcase(business_id)
     return api_list_evals(business_id)
+
+# ---------------------------------------------------------------- one private demo per visitor
+# The seeded database above is a clean template. Each visitor gets their own copy (remembered with
+# a cookie), so one judge clicking "Replay" or adding a business never changes what another sees.
+from starlette.concurrency import run_in_threadpool
+SESSION_LIMIT=int(os.getenv('PROOF_FLOWER_SESSION_LIMIT','300'))
+
+def session_dir()->Path:
+    """This is the folder that holds one small database per visitor."""
+    return DB.parent/'pf_sessions'
+
+def prepare_session_db(path:Path):
+    """This copies the clean demo template into a new visitor's database, and removes the oldest
+    visitor copies if there are too many (they are only demo state, never real data)."""
+    with LOCK:
+        if path.exists(): return
+        path.parent.mkdir(parents=True,exist_ok=True)
+        old=sorted(path.parent.glob('*.sqlite3'),key=lambda p:p.stat().st_mtime)
+        for f in old[:max(0,len(old)-SESSION_LIMIT+1)]:
+            try: f.unlink()
+            except OSError: pass
+        tmp=path.with_name(path.stem+'.tmp')
+        src=sqlite3.connect(DB); dst=sqlite3.connect(tmp)
+        try: src.backup(dst)
+        finally: src.close(); dst.close()
+        os.replace(tmp,path)
+
+@app.middleware('http')
+async def per_visitor_db(request, call_next):
+    """This points every API call at the visitor's own database. Turn it off with
+    PROOF_FLOWER_SESSIONS=0 (the tests do, so they control the database directly)."""
+    if os.getenv('PROOF_FLOWER_SESSIONS','1')!='1' or not request.url.path.startswith('/api/'):
+        return await call_next(request)
+    sid=request.cookies.get('pf_sid','')
+    new=not re.fullmatch(r'[a-f0-9]{32}',sid)
+    if new: sid=uuid.uuid4().hex
+    path=session_dir()/f'{sid}.sqlite3'
+    if not path.exists(): await run_in_threadpool(prepare_session_db,path)
+    token=SESSION_DB.set(path)
+    try: response=await call_next(request)
+    finally: SESSION_DB.reset(token)
+    if new: response.set_cookie('pf_sid',sid,max_age=14*24*3600,httponly=True,samesite='lax')
+    return response
 
 if os.getenv('PROOF_FLOWER_SEED','1')=='1':
     try: seed_showcase()

@@ -153,7 +153,7 @@ It is written for a non-technical owner (plain language, Spanish), and priced fo
 
 ## Tech stack
 
-Python 3.12 · FastAPI · Pydantic v2 · SQLite · Google Gemini (`google-genai`, Google Search grounding) · Requests + BeautifulSoup (website audit) · vanilla HTML/CSS/JS (no build step) · pytest (40 tests) · Docker · Render.
+Python 3.12 · FastAPI · Pydantic v2 · SQLite · Google Gemini (`google-genai`, Google Search grounding) · Requests + BeautifulSoup (website audit) · vanilla HTML/CSS/JS (no build step) · pytest (41 tests) · Docker · Render.
 
 | File | Role |
 |---|---|
@@ -165,7 +165,7 @@ Python 3.12 · FastAPI · Pydantic v2 · SQLite · Google Gemini (`google-genai`
 | `geo.py` | Real website audit (robots.txt AI crawlers, schema.org, FAQ, menu format, llms.txt) with SSRF-safe fetching, GEO rules, drafts |
 | `static/audit.html` | The dashboard (EN/ES): the only page, served at `/` |
 | `data/casa_coqui/` | Synthetic showcase: approved facts, 20 locked questions, Week 1 and Week 3 answers, website signals |
-| `tests/` | 40 tests, including governance rules (`tests/test_governance.py`) |
+| `tests/` | 41 tests, including governance rules (`tests/test_governance.py`) |
 
 ## Run it
 
@@ -196,7 +196,7 @@ The demo works **without** an API key. For live checks, copy `.env.example` to `
 ### Tests
 
 ```bash
-source .venv/bin/activate && pytest -q      # 40 passed; tests never call the real Gemini API
+source .venv/bin/activate && pytest -q      # 41 passed; tests never call the real Gemini API
 ```
 They cover:
 - **Verdicts:** correct claim → no ticket; wrong claim → ticket; unverifiable → no accusation; ambiguous → needs review.
@@ -219,7 +219,7 @@ They cover:
 - **Heuristic visibility.** The rank in prose answers is a text heuristic (lists are exact), and framing uses keyword rules.
 - **Rule-based normalization.** Hours with different times on different days, price ranges and unfamiliar policy wording go to `NEEDS_REVIEW` instead of being guessed.
 - **No login.** Anyone with the link can reset the demo or add a business. Production needs accounts and role-based approval.
-- **Ephemeral storage.** SQLite on Render's free tier resets when the service restarts. All visitors share one demo state.
+- **Ephemeral storage.** SQLite on Render's free tier resets when the service restarts. Each visitor gets a private copy of the demo (remembered with a cookie), so one judge's clicks never change what another sees.
 - **Spot checks are a process.** The weekly extractor spot check and risk-based cadence (daily for prices and policies) are designed but not automated.
 
 ## From MVP to production

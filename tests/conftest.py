@@ -5,3 +5,4 @@ os.environ.setdefault('PROOF_FLOWER_SEED', '0')
 os.environ['GEMINI_API_KEY'] = ''
 os.environ['OPENAI_API_KEY'] = ''
 os.environ['LIVE_EVAL_DELAY'] = '0'
+os.environ['PROOF_FLOWER_SESSIONS'] = '0'   # tests use one database they control; sessions are tested explicitly

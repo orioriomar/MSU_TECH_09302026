@@ -207,3 +207,25 @@ def test_unsafe_business_id_is_rejected(client):
            "X1,x');alert(1);//,Evil,business,Evil,hours,daily 9-5,,https://e.example,2026-09-29,yes,no\n")
     r = client.post('/api/business/setup', json={'csv_text': bad})
     assert r.status_code == 400 and 'lowercase' in r.json()['detail']
+
+
+def test_each_visitor_gets_a_private_demo(tmp_path, monkeypatch):
+    """One judge replaying the demo or approving tickets must not change another judge's view."""
+    monkeypatch.setattr(app, 'DB', tmp_path / 'template.sqlite3')
+    app.init_db(); app.seed_showcase('casa_coqui')
+    monkeypatch.setenv('PROOF_FLOWER_SESSIONS', '1')
+    judge_a, judge_b = TestClient(app.app), TestClient(app.app)
+    runs = lambda c: c.get('/api/evals?business_id=casa_coqui').json()['runs']
+    assert len(runs(judge_a)) == 2 and len(runs(judge_b)) == 2
+    assert judge_a.cookies.get('pf_sid') != judge_b.cookies.get('pf_sid')
+    assert judge_a.post('/api/evals/reset/casa_coqui').status_code == 200
+    assert runs(judge_a) == [] and len(runs(judge_b)) == 2          # B is untouched
+    first = judge_a.post('/api/evals/run', json={'mode': 'mock_baseline'}).json()
+    tid = [t for t in judge_a.get('/api/report/casa_coqui').json()['tickets'] if t['status'] == 'pending'][0]['id']
+    judge_a.post(f'/api/tickets/{tid}/decision', json={'action': 'approve'})
+    b_statuses = {t['status'] for t in judge_b.get('/api/report/casa_coqui').json()['tickets']}
+    assert 'pending' not in b_statuses and first['id']
+    assert len(list((tmp_path / 'pf_sessions').glob('*.sqlite3'))) == 2
+    # the template itself was never changed
+    with app.conn() as c:
+        assert c.execute('SELECT COUNT(*) FROM eval_runs').fetchone()[0] == 2
